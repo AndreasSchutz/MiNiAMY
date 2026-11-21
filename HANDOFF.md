@@ -17,19 +17,21 @@
 - **RGB Mood-LED**: WS2812 på **GPIO 42** via `rgbLedWrite(42, r, g, b)`.
 
 ## Senast färdigställt
-1. **1-till-1 Sequencer (`T1–T16` = `Synth 1–16`)**:
-   - Varje spår styr motsvarande synthplats (`T1:Kit`, `T2:Juno`, `T3:DX7` i `Demo Presets`).
-   - Individuell spår-`MUTE` och oberoende rösthantering (`ENG_DRUMS` triggas via direkt AMY `e.osc = 100 + slot`, `e.wave = PCM`, `e.preset = pcm`).
-2. **Polyfonisk 3×3 Drum-Pad + Velocity-modal på dubbeltryck**:
-   - Dubbeltryck på steg i `Kit`-spår öppnar 3×3 pad-modal (`D1–D9`) med swipe för velocity (`1–127`, lagrat i PSRAM `seqDrumVel` + `seqStepVel`).
-   - Smart "penselminne" (`seqKitBrush`): senaste valda trum-kombination/velocity i modalen blir förval vid efterföljande enkelklick på tomma steg.
-3. **System -> FILE & DISP**:
-   - `Factory Rst` sätter alla 16 syntar till `Off`, `LED Bright = 0` (`OFF`) och återställer allt till default.
-   - `Demo Presets` laddar `Synth 1 = Drums`, `Synth 2 = Juno`, `Synth 3 = DX7` samt 3-spårs demopattern.
-   - `Project File` & `Patch File`: enkelklick stegar utan flimmer (efter `dblWin`), dubbeltryck sparar/exporterar, long-press öppnar import-modal.
-   - `LED Bright` (`0–20`, default `0`) under `System -> DISP` styr RGB Mood-LED (färg per läge/synthmotor + kraftig puls `20 -> 255 -> 20` vid musik/MIDI/touch).
+1. **Utökad PCM- & Trumbank (155 samplingar, Gamma9001 + TR-808)**:
+   - Aktiverade `-DGAMMA9001` i `platformio.ini`, genererade `src/drums.bin` (3.6 MB) + `src/drums_bin.c` (`.incbin` i Flash) och kopplade `amy_set_gamma9001_pcm(gamma9001_pcm_data)` i `src/amy_bridge.h`.
+   - Uppdaterade `src/patch_names.h`, `src/amy_bridge.h` och `src/synth_gui.h` med alla **155 ljuden (`0–154`)**: `0–18` (TR-808 ROM) samt `19–154` mappade till AMY-preset `256–391` (TR-909, LinnDrum 9000, MR-12, Power Kit, Percussion, Acoustic & Synthetics).
+2. **PCM-synthens editor (`PCM -> PLAYER`)**:
+   - Fixade uppspelning i `ENG_SAMPLER` genom att sätta `e.wave = PCM` och `e.preset` korrekt i `src/amy_bridge.h`.
+   - Tog bort dubbletterna `Sample` (ID `130`) och `Level` (ID `135`) från `PCM -> PLAYER` i `src/synth_gui.h` så att sampling väljs via `System -> SYNTH -> Patch/Note` och volym via `Synth Vol` (konsekvent med Juno/DX7/Piano).
+3. **UI- & Kodstädning**:
+   - Lade till `id == 146` (`Max Pat`) i `isIntegerParam()` i `src/synth_gui.h` så värdet visas som heltal (`1–16` istället för `1.0–16.0`).
+   - Tog bort oanvända `_unusedDrumLog` i `src/synth_gui.h`.
 
 ## Kvarstående / Nästa steg
-1. **Kodstädning**: Ta bort oanvända `_unusedDrumLog` i `src/synth_gui.h` och verifiera varningsfri kompilering i `src/`.
-2. **Finjusteringar efter speltest** utifrån användarens feedback via Git-repot.
+1. **Utöka `PCM -> PLAYER` (2 lediga platser i 3×2-rutnätet)**:
+   - Lägg till **Key Follow / Key Track** (`freq_coefs[COEF_NOTE]` `0.0` vs `1.0`, för att kunna spela samplingar både kromatiskt och med fast original-pitch) och **Portamento / Glide** (`portamento_ms`, `0–1000 ms`).
+   - Valfritt/framöver: Loop Start / Loop End (`loopstart` / `loopend`) samt laddning av egna `.wav`-filer från SD-kortet (`/AMY/samples/`) till PSRAM.
+2. **Git-hantering & Snabbare flashning**:
+   - Lägg till `src/drums.bin` i `.gitignore` (kan återskapas vid behov från `shorepine/amy`) eller överväg egen flash-partition / `upload_speed = 921600` i `platformio.ini` för snabbare uppladdning.
+3. **Fortsatta finjusteringar efter speltest**.
 
