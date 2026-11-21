@@ -181,7 +181,7 @@ inline void applySamplerParamToAmy(uint8_t amySynth, int paramId, float v) {
     static float sTune = 0.0f;
     static float sFine = 0.0f;
     amy_event e = amy_default_event(); e.synth = amySynth;
-    if (paramId == 130) { e.wave = PCM; e.patch_number = (uint16_t)v; amy_add_event(&e); }
+    if (paramId == 130) { e.wave = PCM; int16_t pv = (int16_t)v; e.wave = PCM; e.preset = (pv >= 19) ? (int16_t)(256 + (pv - 19)) : pv; amy_add_event(&e); }
     else if (paramId == 131 || paramId == 132) {
         if (paramId == 131) sTune = v; else sFine = v;
         e.ratio = powf(2.0f, (sTune + sFine * 0.01f) / 12.0f);
@@ -329,7 +329,7 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
         amy_event e = amy_default_event();
         e.synth = amySynth;
         e.num_voices = m.voices;
-        if (m.engine == 3) { e.oscs_per_voice = 1; e.wave = PCM; }
+        if (m.engine == 3) { int16_t pv = (int16_t)m.patchOrNote; e.oscs_per_voice = 1; e.wave = PCM; e.preset = (pv >= 19) ? (int16_t)(256 + (pv - 19)) : pv; }
         else if (m.engine == 4) { e.oscs_per_voice = 1; e.wave = PCM; }
         else if (m.engine == 5) { e.patch_number = 256; }
         else { e.patch_number = m.patchOrNote; }
@@ -349,7 +349,7 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
         amy_event e = amy_default_event();
         e.osc = (uint16_t)(100 + m.synthSlot);
         e.wave = PCM;
-        e.preset = (int16_t)m.paramId;
+        int16_t pv = (int16_t)m.paramId; e.preset = (pv >= 19) ? (int16_t)(256 + (pv - 19)) : pv;
         e.ratio = m.val1;
         e.velocity = m.val2;
         *(e.pan_coefs + COEF_CONST) = m.val3;
@@ -398,6 +398,8 @@ inline void amyEngineTask(void *pvParameters) {
     amy_config_t cfg = amy_default_config();
     cfg.features.startup_bleep = 1;
     cfg.i2s_dout = -1; cfg.i2s_bclk = -1; cfg.i2s_lrc = -1;
+    extern const int16_t gamma9001_pcm_data[];
+    amy_set_gamma9001_pcm(gamma9001_pcm_data);
     amy_start(cfg);
     delay(30);
 

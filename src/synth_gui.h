@@ -114,15 +114,15 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     {TYPE_AMY, 54, "Pitch EG",   0.0,   99.0,   0.0,    255, MODE_DX7,    PAGE_LFO},
 
     // --- DRUMS: KIT (PCM Patch 0-66) ---
-    {TYPE_AMY, 20,  "Drum1", 0.0,   66.0,   1.0,    255, MODE_DRUMS, PAGE_OSC},
-    {TYPE_AMY, 60,  "Drum2", 0.0,   66.0,   5.0,    255, MODE_DRUMS, PAGE_OSC},
-    {TYPE_AMY, 61,  "Drum3", 0.0,   66.0,   14.0,   255, MODE_DRUMS, PAGE_OSC},
-    {TYPE_AMY, 62,  "Drum4", 0.0,   66.0,   15.0,   255, MODE_DRUMS, PAGE_OSC},
-    {TYPE_AMY, 63,  "Drum5", 0.0,   66.0,   10.0,   255, MODE_DRUMS, PAGE_OSC},
-    {TYPE_AMY, 64,  "Drum6", 0.0,   66.0,   22.0,   255, MODE_DRUMS, PAGE_OSC},
-    {TYPE_AMY, 89,  "Drum7", 0.0,   66.0,   25.0,   255, MODE_DRUMS, PAGE_OSC},
-    {TYPE_AMY, 90,  "Drum8", 0.0,   66.0,   30.0,   255, MODE_DRUMS, PAGE_OSC},
-    {TYPE_AMY, 91,  "Drum9", 0.0,   66.0,   35.0,   255, MODE_DRUMS, PAGE_OSC},
+    {TYPE_AMY, 20,  "Drum1", 0.0,   154.0,   1.0,    255, MODE_DRUMS, PAGE_OSC},
+    {TYPE_AMY, 60,  "Drum2", 0.0,   154.0,   5.0,    255, MODE_DRUMS, PAGE_OSC},
+    {TYPE_AMY, 61,  "Drum3", 0.0,   154.0,   14.0,   255, MODE_DRUMS, PAGE_OSC},
+    {TYPE_AMY, 62,  "Drum4", 0.0,   154.0,   15.0,   255, MODE_DRUMS, PAGE_OSC},
+    {TYPE_AMY, 63,  "Drum5", 0.0,   154.0,   10.0,   255, MODE_DRUMS, PAGE_OSC},
+    {TYPE_AMY, 64,  "Drum6", 0.0,   154.0,   22.0,   255, MODE_DRUMS, PAGE_OSC},
+    {TYPE_AMY, 89,  "Drum7", 0.0,   154.0,   25.0,   255, MODE_DRUMS, PAGE_OSC},
+    {TYPE_AMY, 90,  "Drum8", 0.0,   154.0,   30.0,   255, MODE_DRUMS, PAGE_OSC},
+    {TYPE_AMY, 91,  "Drum9", 0.0,   154.0,   35.0,   255, MODE_DRUMS, PAGE_OSC},
     // --- DRUMS: TUNE ---
     {TYPE_AMY, 21,  "Drum1", 0.5,   2.0,    1.0,    255, MODE_DRUMS, PAGE_LFO},
     {TYPE_AMY, 22,  "Drum2", 0.5,   2.0,    1.0,    255, MODE_DRUMS, PAGE_LFO},
@@ -193,12 +193,11 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     {TYPE_AMY, 111, "Release",    20.0,  4000.0, 450.0,  255, MODE_PIANO, PAGE_ENV},
 
     // --- SAMPLER (16 st: PLAY, FLT, ENV) ---
-    {TYPE_AMY, 130, "Sample",     0.0,   66.0,   0.0,    255, MODE_SAMPLER, PAGE_OSC},
+    {TYPE_AMY, 130, "Sample",     0.0,   154.0,   0.0,    255, MODE_SAMPLER, PAGE_OSC},
     {TYPE_AMY, 131, "Tune",      -24.0,  24.0,   0.0,    255, MODE_SAMPLER, PAGE_OSC},
     {TYPE_AMY, 132, "Fine Tune", -50.0,  50.0,   0.0,    255, MODE_SAMPLER, PAGE_OSC},
     {TYPE_AMY, 133, "Loop",       0.0,   1.0,    0.0,    255, MODE_SAMPLER, PAGE_OSC},
     {TYPE_AMY, 134, "Pan",        0.0,   1.0,    0.5,    255, MODE_SAMPLER, PAGE_OSC},
-    {TYPE_AMY, 135, "Level",      0.0,   1.0,    0.85,   255, MODE_SAMPLER, PAGE_OSC},
     {TYPE_AMY, 136, "Flt Type",   0.0,   3.0,    1.0,    255, MODE_SAMPLER, PAGE_FILTER},
     {TYPE_AMY, 137, "Cutoff",     40.0,  8000.0, 4500.0, 255, MODE_SAMPLER, PAGE_FILTER},
     {TYPE_AMY, 138, "Resonance",  0.5,   10.0,   1.0,    255, MODE_SAMPLER, PAGE_FILTER},
@@ -473,9 +472,6 @@ inline void triggerDrum(int drumIdx, float velScale = 1.0f) {
   int drumSlot = (synthParts[activePartIdx].engine == ENG_DRUMS) ? activePartIdx : 9;
   triggerDrumOnSlot(drumSlot, drumIdx, velScale);
 }
-inline void _unusedDrumLog(int drumSlot, int drumIdx, int pcm, float tune, float vel, float pan, float flt) { Serial.printf("[Drum Trigger] Synth=%d Drum%d PCM=%d Tune=%.2f Vel=%.2f Pan=%.2f Flt=%.0fHz\n",
-                drumSlot + 1, drumIdx + 1, pcm, tune, vel, pan, flt);
-}
 
 static int fileFeedbackId = -1;
 static uint32_t fileFeedbackUntil = 0;
@@ -493,7 +489,7 @@ inline bool isIntegerParam(const Parameter &p) {
     return (id == 0 || id == 1 || id == 5 || id == 8 || id == 9 || id == 10 || id == 12 ||
             id == 13 || id == 14 || id == 15 || id == 16 || id == 18 || id == 20 || (id >= 60 && id <= 64) || (id >= 89 && id <= 91) || (id >= 101 && id <= 103) || (id >= 78 && id <= 88) || id == 26 ||
             id == 27 || id == 29 || id == 31 || id == 33 || id == 35 || id == 37 || id == 39 ||
-            id == 40 || id == 41 || id == 112 || (id >= 115 && id <= 117) || (id >= 130 && id <= 133) || id == 136 || id == 137 || id == 141 || id == 142 || id == 144 || id == 44 || id == 47 || id == 152 || (id >= 49 && id <= 54) || id == 104 || id == 108 || id == 109 || id == 111);
+            id == 40 || id == 41 || id == 112 || (id >= 115 && id <= 117) || (id >= 130 && id <= 133) || id == 136 || id == 137 || id == 141 || id == 142 || id == 144 || id == 146 || id == 44 || id == 47 || id == 152 || (id >= 49 && id <= 54) || id == 104 || id == 108 || id == 109 || id == 111);
 }
 
 inline bool isFxModalTrigger(const Parameter &p) {
@@ -581,7 +577,7 @@ inline void formatParamDisplay(const Parameter &p, char *outName, char *outVal) 
     return;
   }
   if (p.belongsToMode == MODE_DRUMS && p.belongsToPage == PAGE_OSC) {
-    uint8_t pcmIdx = (uint8_t)constrain((int)p.currentVal, 0, 66);
+    uint8_t pcmIdx = (uint8_t)constrain((int)p.currentVal, 0, 154);
     snprintf(outName, 24, "%s (%u)", p.name, pcmIdx);
     const char *pName = getEnginePatchName(ENG_SAMPLER, pcmIdx);
     snprintf(outVal, 24, "%s", pName ? pName : "-");
@@ -703,7 +699,7 @@ inline void applyParameterValue(int idx, float newVal) {
     int v = (int)p.currentVal;
     if (eng == ENG_JUNO) v = constrain(v, 0, 127);
     else if (eng == ENG_DX7) v = constrain(v, 128, 255);
-    else if (eng == ENG_SAMPLER) v = constrain(v, 0, 66);
+    else if (eng == ENG_SAMPLER) v = constrain(v, 0, 154);
     else if (eng == ENG_DRUMS) v = constrain(v, 0, 127);
     else v = 0;
     if ((float)v != p.currentVal) { p.currentVal = (float)v; refreshParamBox(idx); }
