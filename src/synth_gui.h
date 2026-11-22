@@ -907,13 +907,15 @@ inline void resetCurrentSynthToDefaults() {
     SynthPartConfig &sp = synthParts[activePartIdx];
     amyEnqueuePartConfig((uint8_t)activePartIdx, sp.engine, sp.voices, sp.patchOrNote, sp.level);
     if (eng == ENG_JUNO) {
-        syncJunoGuiFromRomPatch(sp.patchOrNote);
         for (int i = 0; i < BASE_PARAMS; i++) {
             if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].belongsToMode == MODE_JUNO && paramMatrix[i].internalId == 13) {
-                applyParameterValue(i, 0.0f);
+                paramMatrix[i].currentVal = 0.0f;
+                if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + i) = 0.0f;
+                refreshParamBox(i);
                 break;
             }
         }
+        syncAllPartParamsToAmy(activePartIdx);
     }
     else syncAllPartParamsToAmy(activePartIdx);
     int mSel = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
