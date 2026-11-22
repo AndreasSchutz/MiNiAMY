@@ -334,6 +334,86 @@ inline bool paramMatchesEngine(MainMode m, uint8_t eng) {
     return false;
 }
 
+
+inline bool isIntegerParam(const Parameter &p);
+#include <patches.h>
+inline void syncJunoGuiFromRomPatch(uint8_t patchNum) {
+    if (patchNum >= 128) return;
+    const char *cmd = (const char*)pgm_read_ptr(patch_commands + patchNum);
+    if (!cmd) return;
+    auto setJ = [&](int pid, float val) {
+        for (int i = 0; i < BASE_PARAMS; i++) {
+            if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].belongsToMode == MODE_JUNO && paramMatrix[i].internalId == pid) {
+                float cv = constrain(val, paramMatrix[i].minVal, paramMatrix[i].maxVal);
+                if (isIntegerParam(paramMatrix[i])) cv = roundf(cv);
+                paramMatrix[i].currentVal = cv;
+                if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + i) = cv;
+                refreshParamBox(i);
+                break;
+            }
+        }
+    };
+    int curOsc = -1;
+    const char *q = cmd;
+    while (*q) {
+        if (*q == 'v') { curOsc = atoi(q + 1); while (*q && *q != 'Z') {
+            if (*q == 'a') {
+                float a0 = strtof(q + 1, nullptr);
+                if (curOsc == 3) setJ(0, a0 > 0.05f ? 1.0f : 0.0f);
+                else if (curOsc == 2) setJ(1, a0 > 0.05f ? 1.0f : 0.0f);
+                else if (curOsc == 4) setJ(3, a0);
+                else if (curOsc == 5) setJ(4, a0);
+                else if (curOsc == 0) {
+                    const char *c1 = strchr(q + 1, ','); const char *c2 = c1 ? strchr(c1 + 1, ',') : nullptr;
+                    const char *c3 = c2 ? strchr(c2 + 1, ',') : nullptr;
+                    float aEg = c3 ? strtof(c3 + 1, nullptr) : 0.0f;
+                    bool gate = (a0 > 0.05f && aEg < 0.05f);
+                    setJ(44, gate ? 1.0f : 0.0f);
+                    setJ(45, gate ? a0 : aEg);
+                }
+            } else if (*q == 'd' && curOsc == 2) {
+                float d0 = strtof(q + 1, nullptr); setJ(2, d0);
+                const char *c1 = strchr(q + 1, ','); const char *c2 = c1 ? strchr(c1 + 1, ',') : nullptr;
+                const char *c3 = c2 ? strchr(c2 + 1, ',') : nullptr; const char *c4 = c3 ? strchr(c3 + 1, ',') : nullptr;
+                setJ(35, (c4 && strtof(c4 + 1, nullptr) > 0.02f) ? 1.0f : 0.0f);
+            } else if (*q == 'f' && curOsc == 1) {
+                setJ(36, strtof(q + 1, nullptr));
+            } else if (*q == 'f' && curOsc == 3) {
+                float fq = strtof(q + 1, nullptr);
+                setJ(39, (fq < 300.0f) ? -1.0f : ((fq > 600.0f) ? 1.0f : 0.0f));
+                const char *c1 = strchr(q + 1, ','); const char *c2 = c1 ? strchr(c1 + 1, ',') : nullptr;
+                const char *c3 = c2 ? strchr(c2 + 1, ',') : nullptr; const char *c4 = c3 ? strchr(c3 + 1, ',') : nullptr;
+                if (c4) setJ(38, strtof(c4 + 1, nullptr) / 0.15f);
+            } else if (*q == 'A' && curOsc == 1) {
+                setJ(37, strtof(q + 1, nullptr));
+            } else if (*q == 'A' && curOsc == 0) {
+                char *nx = nullptr; float t0 = strtof(q + 1, &nx); setJ(9, t0);
+                if (nx && *nx == ',') { strtof(nx + 1, &nx); }
+                if (nx && *nx == ',') { float t1 = strtof(nx + 1, &nx); setJ(10, t1); }
+                if (nx && *nx == ',') { float v1 = strtof(nx + 1, &nx); setJ(11, v1); }
+                if (nx && *nx == ',') { float t3 = strtof(nx + 1, &nx); setJ(12, t3); }
+            } else if (*q == 'F' && curOsc == 0) {
+                char *nx = nullptr; float fc = strtof(q + 1, &nx); setJ(5, fc);
+                if (nx && *nx == ',') { float fn = strtof(nx + 1, &nx); setJ(43, fn); }
+                if (nx && *nx == ',') { strtof(nx + 1, &nx); }
+                if (nx && *nx == ',') { float fe = strtof(nx + 1, &nx); setJ(41, fe < 0.0f ? 1.0f : 0.0f); setJ(7, fabsf(fe) / 6.0f); }
+                if (nx && *nx == ',') { strtof(nx + 1, &nx); }
+                if (nx && *nx == ',') { float fm = strtof(nx + 1, &nx); setJ(42, fm / 4.0f); }
+            } else if (*q == 'R' && curOsc == 0) {
+                setJ(6, strtof(q + 1, nullptr));
+            } else if (*q == 'x' && curOsc == 0) {
+                float eql = strtof(q + 1, nullptr);
+                setJ(8, eql < -3.0f ? 0.0f : (eql < 3.0f ? 1.0f : (eql < 9.0f ? 2.0f : 3.0f)));
+            } else if (*q == 'k' && curOsc == 0) {
+                float ch = strtof(q + 1, nullptr);
+                setJ(13, ch < 0.1f ? 0.0f : (ch < 0.65f ? 1.0f : (ch < 0.9f ? 2.0f : 3.0f)));
+            }
+            q++;
+        } }
+        if (*q) q++;
+    }
+}
+
 inline void syncAllPartParamsToAmy(int pIdx) {
     uint8_t eng = synthParts[pIdx].engine;
     if (eng == ENG_OFF || synthParts[pIdx].voices == 0) return;
@@ -554,6 +634,14 @@ inline void formatParamDisplay(const Parameter &p, char *outName, char *outVal) 
       return;
     }
   }
+  if (p.pType == TYPE_AMY && p.belongsToMode == MODE_JUNO) {
+    if (p.internalId == 0 || p.internalId == 1) { snprintf(outVal, 24, "%s", (p.currentVal >= 0.5f) ? "ON" : "OFF"); return; }
+    if (p.internalId == 35) { snprintf(outVal, 24, "%s", (p.currentVal >= 0.5f) ? "LFO" : "MAN"); return; }
+    if (p.internalId == 39) { int oc = constrain((int)roundf(p.currentVal), -1, 1); snprintf(outVal, 24, "%s", (oc < 0) ? "16'" : ((oc > 0) ? "4'" : "8'")); return; }
+    if (p.internalId == 41) { snprintf(outVal, 24, "%s", (p.currentVal >= 0.5f) ? "NEG (-)" : "POS (+)"); return; }
+    if (p.internalId == 44) { snprintf(outVal, 24, "%s", (p.currentVal >= 0.5f) ? "GATE" : "ENV"); return; }
+    if (p.internalId == 8)  { int h = constrain((int)p.currentVal, 0, 3); if (h == 0) snprintf(outVal, 24, "OFF"); else snprintf(outVal, 24, "LVL %d", h); return; }
+  }
   if (p.pType == TYPE_AMY && p.internalId == 112) {
     static const char* lfoW[] = {"TRI", "SIN", "SAW", "SQR", "RND"};
     snprintf(outVal, 24, "%s", lfoW[constrain((int)p.currentVal, 0, 4)]);
@@ -668,7 +756,7 @@ inline void applyParameterValue(int idx, float newVal) {
     SynthPartConfig &sp = synthParts[activePartIdx];
     sp.engine = eng;
     if (eng == ENG_OFF) { sp.voices = 0; }
-    else if (eng == ENG_JUNO) { if (sp.patchOrNote > 127) sp.patchOrNote = 0; if (sp.voices == 0) sp.voices = 4; }
+    else if (eng == ENG_JUNO) { if (sp.patchOrNote > 127) sp.patchOrNote = 0; if (sp.voices == 0) sp.voices = 4; syncJunoGuiFromRomPatch(sp.patchOrNote); }
     else if (eng == ENG_DX7) { if (sp.patchOrNote < 128) sp.patchOrNote = 128; if (sp.voices == 0) sp.voices = 4; }
     else if (eng == ENG_SAMPLER) { sp.patchOrNote = 0; if (sp.voices == 0) sp.voices = 2; }
     else if (eng == ENG_DRUMS) { sp.patchOrNote = 36; if (sp.voices == 0) sp.voices = 9; }
@@ -704,6 +792,7 @@ inline void applyParameterValue(int idx, float newVal) {
     else v = 0;
     if ((float)v != p.currentVal) { p.currentVal = (float)v; refreshParamBox(idx); }
     synthParts[activePartIdx].patchOrNote = (uint8_t)v;
+    if (eng == ENG_JUNO) { syncJunoGuiFromRomPatch((uint8_t)v); syncAllPartParamsToAmy(activePartIdx); }
     memset(((char*)synthPatchNames) + activePartIdx * 16, 0, 16);
     int mSel = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
     if (mSel >= 0) refreshParamBox(mSel);
@@ -715,7 +804,10 @@ inline void applyParameterValue(int idx, float newVal) {
     else loadPartIntoMatrix((int)p.currentVal - 1);
   }
   if (p.internalId == SYS_PARAM_MASTER_VOL) amyEnqueueMasterVol(p.currentVal / 10.0f);
-  else if (p.internalId >= SYS_PARAM_PART_ENGINE && p.internalId <= SYS_PARAM_PART_LVL) {
+  else if (p.internalId == SYS_PARAM_PART_LVL) {
+    amyEnqueuePartLevel((uint8_t)activePartIdx, synthParts[activePartIdx].level);
+  }
+  else if (p.internalId >= SYS_PARAM_PART_ENGINE && p.internalId < SYS_PARAM_PART_LVL) {
     SynthPartConfig &sp = synthParts[activePartIdx];
     amyEnqueuePartConfig((uint8_t)activePartIdx, sp.engine, sp.voices, sp.patchOrNote, sp.level);
   }
@@ -812,7 +904,18 @@ inline void resetCurrentSynthToDefaults() {
             refreshParamBox(i);
         }
     }
-    syncAllPartParamsToAmy(activePartIdx);
+    SynthPartConfig &sp = synthParts[activePartIdx];
+    amyEnqueuePartConfig((uint8_t)activePartIdx, sp.engine, sp.voices, sp.patchOrNote, sp.level);
+    if (eng == ENG_JUNO) {
+        syncJunoGuiFromRomPatch(sp.patchOrNote);
+        for (int i = 0; i < BASE_PARAMS; i++) {
+            if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].belongsToMode == MODE_JUNO && paramMatrix[i].internalId == 13) {
+                applyParameterValue(i, 0.0f);
+                break;
+            }
+        }
+    }
+    else syncAllPartParamsToAmy(activePartIdx);
     int mSel = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
     if (mSel >= 0) refreshParamBox(mSel);
     markStorageDirty();

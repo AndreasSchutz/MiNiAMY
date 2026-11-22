@@ -16,6 +16,7 @@ static volatile bool seqExtStepPulse = false;
 
 enum AmyBridgeMsgType : uint8_t {
     AMY_MSG_PART_CONFIG = 1,
+    AMY_MSG_PART_LEVEL = 6,
     AMY_MSG_PARAM_CHANGE = 2,
     AMY_MSG_DRUM_TRIGGER = 3,
     AMY_MSG_MASTER_VOL = 4,
@@ -38,6 +39,12 @@ struct AmyBridgeMsg {
 static QueueHandle_t amyCmdQueue = nullptr;
 inline UBaseType_t amyGetQueueFree() {
     return amyCmdQueue ? uxQueueSpacesAvailable(amyCmdQueue) : 0;
+}
+
+inline void amyEnqueuePartLevel(uint8_t slot, float level) {
+    if (!amyCmdQueue) return;
+    AmyBridgeMsg msg = {AMY_MSG_PART_LEVEL, slot, 0, 0, 0, 0, level, 0, 0, 0};
+    xQueueSend(amyCmdQueue, &msg, 0);
 }
 
 inline void amyEnqueuePartConfig(uint8_t slot, uint8_t engine, uint8_t voices, uint8_t patchOrNote, float level) {
@@ -72,72 +79,101 @@ inline void amyEnqueueNote(uint8_t slot, uint8_t midiNote, float velocity) {
     xQueueSend(amyCmdQueue, &msg, 0);
 }
 
+static float g_partVol[16] = {0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f};
 inline void applyJunoParamToAmy(uint8_t amySynth, int paramId, float v) {
-    amy_event e = amy_default_event();
-    e.synth = amySynth;
-    if (paramId == 0) {
-        e.osc = 0; *(e.amp_coefs + COEF_CONST) = v; amy_add_event(&e);
-    } else if (paramId == 1) {
-        e.osc = 1; *(e.amp_coefs + COEF_CONST) = v; amy_add_event(&e);
-    } else if (paramId == 2) {
-        e.osc = 1; *(e.duty_coefs + COEF_CONST) = v; amy_add_event(&e);
-    } else if (paramId == 35) {
-        e.osc = 1;
-        *(e.duty_coefs + COEF_MOD) = (v >= 0.5f) ? 0.4f : 0.0f;
-        *(e.duty_coefs + COEF_EG0) = 0.0f;
-        amy_add_event(&e);
-    } else if (paramId == 3) {
-        e.osc = 2; *(e.amp_coefs + COEF_CONST) = v; amy_add_event(&e);
-    } else if (paramId == 4) {
-        e.osc = 3; *(e.amp_coefs + COEF_CONST) = v; amy_add_event(&e);
-    } else if (paramId == 36) {
-        e.osc = 4; *(e.freq_coefs + COEF_CONST) = v; amy_add_event(&e);
-    } else if (paramId == 37) {
-        e.osc = 4; *(e.eg0_times + 0) = (int32_t)v; *(e.eg0_values + 0) = 1.0f; amy_add_event(&e);
-    } else if (paramId == 38) {
-        for (uint16_t o = 0; o < 3; o++) {
-            amy_event eo = amy_default_event(); eo.synth = amySynth; eo.osc = o;
-            *(eo.freq_coefs + COEF_MOD) = v * 0.5f; amy_add_event(&eo);
-        }
+    static bool  junoGateMode = false;
+    static float junoEnvPol = 1.0f;
+    static float junoEnvMod = 0.5f;
+    static float junoPwm = 0.5f;
+    static bool  junoPwmLfo = false;
+    static float junoAtk = 20.0f, junoDec = 400.0f, junoSus = 0.7f, junoRel = 300.0f;
+
+    auto sendOsc = [&](uint16_t o, auto fn) {
+        amy_event e = amy_default_event(); e.synth = amySynth; e.osc = o; fn(e); amy_add_event(&e);
+    };
+    auto sendEnv = [&]() {
+        sendOsc(0, [&](amy_event &e) {
+            *(e.eg0_times + 0) = junoGateMode ? 2 : (int32_t)junoAtk;
+            *(e.eg0_values + 0) = 1.0f;
+            *(e.eg0_times + 1) = junoGateMode ? 10 : (int32_t)junoDec;
+            *(e.eg0_values + 1) = junoGateMode ? 1.0f : junoSus;
+            *(e.eg0_times + 2) = junoGateMode ? 15 : (int32_t)junoRel;
+            *(e.eg0_values + 2) = 0.0f;
+        });
+    };
+    auto sendPwm = [&]() {
+        sendOsc(2, [&](amy_event &e) {
+            for (int c = 0; c < NUM_COMBO_COEFS; c++) *(e.duty_coefs + c) = 0.0f;
+            *(e.duty_coefs + COEF_CONST) = junoPwm;
+            *(e.duty_coefs + COEF_MOD0)  = junoPwmLfo ? 0.35f : 0.0f;
+        });
+    };
+
+    auto setOscLvl = [&](uint16_t o, float lvl) {
+        sendOsc(o, [&](amy_event &e) {
+            for (int c = 0; c < NUM_COMBO_COEFS; c++) *(e.amp_coefs + c) = 0.0f;
+            *(e.amp_coefs + COEF_CONST) = lvl;
+        });
+    };
+
+    if (paramId == 0) setOscLvl(3, (v >= 0.5f) ? 1.0f : 0.0f);
+    else if (paramId == 1) {
+        setOscLvl(2, (v >= 0.5f) ? 1.0f : 0.0f);
+        if (v >= 0.5f) sendPwm();
+    } else if (paramId == 2 || paramId == 35) {
+        if (paramId == 2) junoPwm = v;
+        if (paramId == 35) junoPwmLfo = (v >= 0.5f);
+        sendPwm();
+    } else if (paramId == 3) setOscLvl(4, v);
+    else if (paramId == 4) setOscLvl(5, v);
+    else if (paramId == 36) sendOsc(1, [&](amy_event &e) { *(e.freq_coefs + COEF_NOTE) = 0.0f; *(e.freq_coefs + COEF_CONST) = v; });
+    else if (paramId == 37) sendOsc(1, [&](amy_event &e) { *(e.eg0_times + 0) = (int32_t)v; *(e.eg0_values + 0) = 1.0f; });
+    else if (paramId == 38) {
+        for (uint16_t o = 2; o <= 4; o++) sendOsc(o, [&](amy_event &e) { *(e.freq_coefs + COEF_MOD) = v * 0.15f; });
     } else if (paramId == 39) {
         float oct = (v < -0.5f) ? 0.5f : ((v > 0.5f) ? 2.0f : 1.0f);
-        for (uint16_t o = 0; o < 2; o++) {
-            amy_event eo = amy_default_event(); eo.synth = amySynth; eo.osc = o;
-            eo.ratio = oct; amy_add_event(&eo);
-        }
+        sendOsc(2, [&](amy_event &e) { *(e.freq_coefs + COEF_CONST) = 220.0f * oct; });
+        sendOsc(3, [&](amy_event &e) { *(e.freq_coefs + COEF_CONST) = 220.0f * oct; });
+        sendOsc(4, [&](amy_event &e) { *(e.freq_coefs + COEF_CONST) = 110.0f * oct; });
     } else if (paramId == 112) {
-        static const uint8_t waves[5] = {TRIANGLE, SINE, SAW_UP, PULSE, NOISE};
-        int wi = constrain((int)v, 0, 4);
-        e.osc = 4; e.wave = *(waves + wi); amy_add_event(&e);
-    } else if (paramId == 41) {
-        static float lastPol = 1.0f;
-        lastPol = (v >= 0.5f) ? -1.0f : 1.0f;
-        *(e.filter_freq_coefs + COEF_EG0) = 2.0f * lastPol; amy_add_event(&e);
-    } else if (paramId == 42) {
-        *(e.filter_freq_coefs + COEF_MOD) = v * 3.0f; amy_add_event(&e);
-    } else if (paramId == 43) {
-        *(e.filter_freq_coefs + COEF_NOTE) = v; amy_add_event(&e);
-    } else if (paramId == 9) {
-        *(e.eg0_times + 0) = (int32_t)v; *(e.eg0_values + 0) = 1.0f; amy_add_event(&e);
-    } else if (paramId == 10) {
-        *(e.eg0_times + 1) = (int32_t)v; amy_add_event(&e);
-    } else if (paramId == 11) {
-        *(e.eg0_values + 1) = v; *(e.eg0_values + 2) = v; amy_add_event(&e);
-    } else if (paramId == 12) {
-        *(e.eg0_times + 3) = (int32_t)v; *(e.eg0_values + 3) = 0.0f; amy_add_event(&e);
+        static const uint8_t waves[] = {TRIANGLE, SINE, SAW_UP, PULSE, NOISE};
+        sendOsc(1, [&](amy_event &e) { e.wave = waves[constrain((int)v, 0, 4)]; });
+    } else if (paramId == 5) sendOsc(0, [&](amy_event &e) { *(e.filter_freq_coefs + COEF_CONST) = v; });
+    else if (paramId == 6) sendOsc(0, [&](amy_event &e) { e.resonance = v; });
+    else if (paramId == 7 || paramId == 41) {
+        if (paramId == 7) junoEnvMod = v;
+        if (paramId == 41) junoEnvPol = (v >= 0.5f) ? -1.0f : 1.0f;
+        sendOsc(0, [&](amy_event &e) { *(e.filter_freq_coefs + COEF_EG0) = junoEnvMod * 6.0f * junoEnvPol; });
+    } else if (paramId == 42) sendOsc(0, [&](amy_event &e) { *(e.filter_freq_coefs + COEF_MOD) = v * 4.0f; });
+    else if (paramId == 43) sendOsc(0, [&](amy_event &e) { *(e.filter_freq_coefs + COEF_NOTE) = v; });
+    else if (paramId == 9 || paramId == 10 || paramId == 11 || paramId == 12) {
+        if (paramId == 9) junoAtk = v;
+        else if (paramId == 10) junoDec = v;
+        else if (paramId == 11) junoSus = v;
+        else junoRel = v;
+        sendEnv();
     } else if (paramId == 44) {
-        bool isGate = (v >= 0.5f);
-        *(e.amp_coefs + COEF_EG0) = isGate ? 0.0f : 1.0f;
-        *(e.amp_coefs + COEF_CONST) = isGate ? 0.85f : 0.0f;
+        junoGateMode = (v >= 0.5f);
+        sendEnv();
+    } else if (paramId == 45) {
+        amy_event e = amy_default_event(); e.synth = amySynth;
+        e.synth_level = v * g_partVol[(amySynth - 1) & 15];
         amy_add_event(&e);
     } else if (paramId == 8) {
-        int hpf = constrain((int)v, 0, 3);
-        e.filter_type = (hpf > 0) ? FILTER_HPF : FILTER_LPF;
-        if (hpf > 0) *(e.filter_freq_coefs + COEF_CONST) = (float)(hpf * 180);
-        amy_add_event(&e);
+        static const float hpfHz[] = {0.0f, 140.0f, 300.0f, 620.0f};
+        int st = constrain((int)v, 0, 3);
+        for (uint16_t o = 2; o <= 5; o++) sendOsc(o, [&](amy_event &e) {
+            e.filter_type = (st == 0) ? FILTER_NONE : FILTER_HPF;
+            if (st > 0) *(e.filter_freq_coefs + COEF_CONST) = hpfHz[st];
+        });
     } else if (paramId == 13) {
-        static const float chLvl[4] = {0.0f, 0.5f, 0.8f, 1.0f};
-        e.chorus_level = *(chLvl + constrain((int)v, 0, 3));
+        static const float chLvl[] = {0.0f, 0.6f, 0.85f, 1.0f};
+        static const float chSpd[] = {0.5f, 0.5f, 0.85f, 3.8f};
+        int st = constrain((int)v, 0, 3);
+        amy_event e = amy_default_event(); e.bus = 0;
+        e.chorus_level = chLvl[st];
+        e.chorus_lfo_freq = chSpd[st];
+        e.chorus_depth = 0.5f;
         amy_add_event(&e);
     }
 }
@@ -160,7 +196,7 @@ inline void applyPianoParamToAmy(uint8_t amySynth, int paramId, float v) {
         if (paramId == 108) { *(e.eg0_times + 0) = (int32_t)v; *(e.eg0_values + 0) = 1.0f; }
         else if (paramId == 109) { *(e.eg0_times + 1) = (int32_t)v; }
         else if (paramId == 110) { *(e.eg0_values + 1) = v; *(e.eg0_values + 2) = v; }
-        else { *(e.eg0_times + 3) = (int32_t)v; *(e.eg0_values + 3) = 0.0f; }
+        else { *(e.eg0_times + 2) = (int32_t)v; *(e.eg0_values + 2) = 0.0f; }
         amy_add_event(&e);
     } else if (paramId >= 115 && paramId <= 117) {
         int wi = constrain((int)v, 0, 3);
@@ -315,12 +351,16 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
     }
 }
 
-static float g_partVol[16] = {0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f,0.85f};
 static uint32_t g_lastPartSig[16] = {0};
 
 inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
     uint8_t amySynth = m.synthSlot + 1;
-    if (m.type == AMY_MSG_PART_CONFIG) {
+    if (m.type == AMY_MSG_PART_LEVEL) {
+        g_partVol[m.synthSlot & 15] = constrain(m.val1, 0.0f, 1.5f);
+        amy_event e = amy_default_event(); e.synth = amySynth;
+        e.synth_level = g_partVol[m.synthSlot & 15];
+        amy_add_event(&e);
+    } else if (m.type == AMY_MSG_PART_CONFIG) {
         if (m.engine == 0 || m.voices == 0) {
             amy_event offE = amy_default_event(); offE.synth = amySynth; offE.num_voices = 0; amy_add_event(&offE); return;
         }
@@ -366,12 +406,8 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
         applySamplerParamToAmy(amySynth, m.paramId, m.val1);
         applyDx7ParamToAmy(amySynth, m.paramId, m.val1);
         switch (m.paramId) {
-            case 5:  *(e.filter_freq_coefs + COEF_CONST) = m.val1; amy_add_event(&e); break;
-            case 6:  e.resonance = m.val1; amy_add_event(&e); break;
-            case 7:  *(e.filter_freq_coefs + COEF_EG0) = m.val1 * 4.0f; amy_add_event(&e); break;
-            case 40: e.portamento_ms = (uint16_t)m.val1; amy_add_event(&e); break;
-            case 45: *(e.amp_coefs + COEF_CONST) = m.val1; amy_add_event(&e); break;
-            case 14: e.algorithm = (uint8_t)m.val1; amy_add_event(&e); break;
+                                                case 40: e.portamento_ms = (uint16_t)m.val1; amy_add_event(&e); break;
+                        case 14: e.algorithm = (uint8_t)m.val1; amy_add_event(&e); break;
             case 15: e.feedback = m.val1 / 7.0f; amy_add_event(&e); break;
             case 46: { amy_event ge = amy_default_event(); ge.bus = 0; ge.echo_level = m.val1; amy_add_event(&ge); break; }
             case 47: { amy_event ge = amy_default_event(); ge.bus = 0; ge.echo_delay_ms = m.val1; amy_add_event(&ge); break; }
