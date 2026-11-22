@@ -57,31 +57,31 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     // --- JUNO-106: DCO (6 st) ---
     {TYPE_AMY, 0,  "Saw",        0.0,   1.0,    1.0,    255, MODE_JUNO,   PAGE_OSC},
     {TYPE_AMY, 1,  "Pulse",      0.0,   1.0,    0.0,    255, MODE_JUNO,   PAGE_OSC},
-    {TYPE_AMY, 2,  "PWM",        0.05,  0.95,   0.5,    255, MODE_JUNO,   PAGE_OSC},
     {TYPE_AMY, 35, "PWM Mode",   0.0,   1.0,    0.0,    255, MODE_JUNO,   PAGE_OSC},
-    {TYPE_AMY, 3,  "Sub Osc",    0.0,   1.0,    0.3,    255, MODE_JUNO,   PAGE_OSC},
-    {TYPE_AMY, 4,  "Noise",      0.0,   1.0,    0.0,    255, MODE_JUNO,   PAGE_OSC},
-    // --- JUNO-106: LFO (5 st) ---
-    {TYPE_AMY, 36, "LFO Rate",   0.1,   20.0,   4.5,    255, MODE_JUNO,   PAGE_LFO},
-    {TYPE_AMY, 37, "LFO Delay",  0.0,   3000.0, 0.0,    255, MODE_JUNO,   PAGE_LFO},
-    {TYPE_AMY, 38, "DCO LFO",    0.0,   1.0,    0.0,    255, MODE_JUNO,   PAGE_LFO},
-    {TYPE_AMY, 39, "Octave",    -1.0,   1.0,    0.0,    255, MODE_JUNO,   PAGE_LFO},
-    {TYPE_AMY, 40, "Portamento", 0.0,   1000.0, 0.0,    255, MODE_JUNO,   PAGE_LFO},
+    {TYPE_AMY, 39, "Octave",    -1.0,   1.0,    0.0,    255, MODE_JUNO,   PAGE_OSC},
+    {TYPE_AMY, 38, "DCO LFO",    0.0,  10.0,    0.0,    255, MODE_JUNO,   PAGE_OSC},
+    {TYPE_AMY, 2,  "PWM",        0.0,  10.0,    0.0,    255, MODE_JUNO,   PAGE_OSC},
+    {TYPE_AMY, 3,  "Sub Osc",    0.0,  10.0,    3.0,    255, MODE_JUNO,   PAGE_OSC},
+    {TYPE_AMY, 4,  "Noise",      0.0,  10.0,    0.0,    255, MODE_JUNO,   PAGE_OSC},
+    {TYPE_AMY, 40, "Portamento", 0.0,  10.0,    0.0,    255, MODE_JUNO,   PAGE_OSC},
+    // --- JUNO-106: LFO (3 st) ---
+    {TYPE_AMY, 36, "LFO Rate",   0.0,  10.0,    4.0,    255, MODE_JUNO,   PAGE_LFO},
+    {TYPE_AMY, 37, "LFO Delay",  0.0,  10.0,    0.0,    255, MODE_JUNO,   PAGE_LFO},
     {TYPE_AMY, 112, "LFO Wave",  0.0,   4.0,    0.0,    255, MODE_JUNO,   PAGE_LFO},
     // --- JUNO-106: VCF (6 st) ---
-    {TYPE_AMY, 5,  "Cutoff",     20.0,  8000.0, 1200.0, 255, MODE_JUNO,   PAGE_FILTER},
-    {TYPE_AMY, 6,  "Res",        0.5,   10.0,   1.5,    255, MODE_JUNO,   PAGE_FILTER},
-    {TYPE_AMY, 7,  "Env Mod",    0.0,   1.0,    0.5,    255, MODE_JUNO,   PAGE_FILTER},
+    {TYPE_AMY, 5,  "Cutoff",     0.0,  10.0,    7.0, 255, MODE_JUNO,   PAGE_FILTER},
+    {TYPE_AMY, 6,  "Res",        0.0,  10.0,    1.0,    255, MODE_JUNO,   PAGE_FILTER},
     {TYPE_AMY, 41, "Env Pol",    0.0,   1.0,    0.0,    255, MODE_JUNO,   PAGE_FILTER},
-    {TYPE_AMY, 42, "LFO Mod",    0.0,   1.0,    0.0,    255, MODE_JUNO,   PAGE_FILTER},
-    {TYPE_AMY, 43, "Key Follow", 0.0,   1.0,    0.5,    255, MODE_JUNO,   PAGE_FILTER},
-    // --- JUNO-106: ENV (6 st) ---
-    {TYPE_AMY, 9,  "Attack",     1.0,   3000.0, 20.0,   255, MODE_JUNO,   PAGE_ENV},
-    {TYPE_AMY, 10, "Decay",      10.0,  5000.0, 400.0,  255, MODE_JUNO,   PAGE_ENV},
-    {TYPE_AMY, 11, "Sustain",    0.0,   1.0,    0.7,    255, MODE_JUNO,   PAGE_ENV},
-    {TYPE_AMY, 12, "Release",    10.0,  5000.0, 300.0,  255, MODE_JUNO,   PAGE_ENV},
+    {TYPE_AMY, 7,  "Env Mod",    0.0,  10.0,    5.0,    255, MODE_JUNO,   PAGE_FILTER},
+    {TYPE_AMY, 42, "LFO Mod",    0.0,  10.0,    0.0,    255, MODE_JUNO,   PAGE_FILTER},
+    {TYPE_AMY, 43, "Key Follow", 0.0,  10.0,    5.0,    255, MODE_JUNO,   PAGE_FILTER},
+    // --- JUNO-106: ENV (2 topp + 4 staende ADSR-reglar) ---
     {TYPE_AMY, 44, "VCA Mode",   0.0,   1.0,    0.0,    255, MODE_JUNO,   PAGE_ENV},
-    {TYPE_AMY, 45, "VCA Level",  0.0,   1.0,    0.85,   255, MODE_JUNO,   PAGE_ENV},
+    {TYPE_AMY, 45, "VCA Level",  0.0,  10.0,    8.0,    255, MODE_JUNO,   PAGE_ENV},
+    {TYPE_AMY, 9,  "Attack",     0.0,  10.0,    1.0,    255, MODE_JUNO,   PAGE_ENV},
+    {TYPE_AMY, 10, "Decay",      0.0,  10.0,    3.0,    255, MODE_JUNO,   PAGE_ENV},
+    {TYPE_AMY, 11, "Sustain",    0.0,  10.0,    7.0,    255, MODE_JUNO,   PAGE_ENV},
+    {TYPE_AMY, 12, "Release",    0.0,  10.0,    2.0,    255, MODE_JUNO,   PAGE_ENV},
     // --- JUNO-106: FX (2 st) ---
     {TYPE_AMY, 8,  "HPF",        0.0,   3.0,    0.0,    255, MODE_JUNO,   PAGE_FX},
     {TYPE_AMY, 13, "Chorus",     0.0,   3.0,    1.0,    255, MODE_JUNO,   PAGE_FX},
@@ -210,7 +210,7 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     {TYPE_AMY, 145, "Vel Sens",   0.0,   1.5,    1.0,    255, MODE_SAMPLER, PAGE_ENV},
 
     // --- SYSTEM ---
-    {TYPE_SYSTEM, SYS_PARAM_BRIGHTNESS, "Brightness", 25.0, 100.0, 85.0, 255, MODE_SYSTEM, PAGE_SYS_DISPLAY},
+    {TYPE_SYSTEM, SYS_PARAM_BRIGHTNESS, "Brightness", 10.0, 100.0, 85.0, 255, MODE_SYSTEM, PAGE_SYS_DISPLAY},
     {TYPE_SYSTEM, SYS_PARAM_MASTER_VOL, "Master Vol", 0.0,  10.0,  8.0,  255, MODE_SYSTEM, PAGE_FX},
     {TYPE_SYSTEM, SYS_PARAM_DBLCLICK,   "DblClick",   0.0,  2.0,   1.0,  255, MODE_SYSTEM, PAGE_SYS_DISPLAY},
     {TYPE_SYSTEM, SYS_PARAM_FLIP,       "Flip",       0.0,  1.0,   0.0,  255, MODE_SYSTEM, PAGE_SYS_DISPLAY},
@@ -238,8 +238,8 @@ static lv_coord_t dragStartY = 0;
 
 static lv_obj_t *opModal = nullptr;
 static lv_obj_t *opModalTitle = nullptr;
-static lv_obj_t *opModalBoxes[OP_DETAIL_COUNT] = {nullptr};
-static lv_obj_t *opModalLabels[OP_DETAIL_COUNT] = {nullptr};
+static lv_obj_t *opModalBoxes[20] = {nullptr};
+static lv_obj_t *opModalLabels[20] = {nullptr};
 static int activeOpDetail = -1;
 
 inline void initDx7OperatorParams() {
@@ -341,6 +341,24 @@ inline void syncJunoGuiFromRomPatch(uint8_t patchNum) {
     if (patchNum >= 128) return;
     const char *cmd = (const char*)pgm_read_ptr(patch_commands + patchNum);
     if (!cmd) return;
+    for (int i = 0; i < BASE_PARAMS; i++) {
+        Parameter *pp = paramMatrix + i;
+        if (pp->pType == TYPE_AMY && pp->belongsToMode == MODE_JUNO) {
+            float dv = (pp->internalId == 13) ? 0.0f : pp->defaultVal;
+            pp->currentVal = dv;
+            if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + i) = dv;
+            refreshParamBox(i);
+        }
+    }
+    for (int i = 0; i < BASE_PARAMS; i++) {
+        Parameter *pp = paramMatrix + i;
+        if (pp->pType == TYPE_AMY && pp->belongsToMode == MODE_JUNO) {
+            float dv = (pp->internalId == 13) ? 0.0f : pp->defaultVal;
+            pp->currentVal = dv;
+            if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + i) = dv;
+            refreshParamBox(i);
+        }
+    }
     auto setJ = [&](int pid, float val) {
         for (int i = 0; i < BASE_PARAMS; i++) {
             if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].belongsToMode == MODE_JUNO && paramMatrix[i].internalId == pid) {
@@ -361,23 +379,23 @@ inline void syncJunoGuiFromRomPatch(uint8_t patchNum) {
                 float a0 = strtof(q + 1, nullptr);
                 if (curOsc == 3) setJ(0, a0 > 0.05f ? 1.0f : 0.0f);
                 else if (curOsc == 2) setJ(1, a0 > 0.05f ? 1.0f : 0.0f);
-                else if (curOsc == 4) setJ(3, a0);
-                else if (curOsc == 5) setJ(4, a0);
+                else if (curOsc == 4) setJ(3, a0 * 10.0f);
+                else if (curOsc == 5) setJ(4, a0 * 10.0f);
                 else if (curOsc == 0) {
                     const char *c1 = strchr(q + 1, ','); const char *c2 = c1 ? strchr(c1 + 1, ',') : nullptr;
                     const char *c3 = c2 ? strchr(c2 + 1, ',') : nullptr;
                     float aEg = c3 ? strtof(c3 + 1, nullptr) : 0.0f;
                     bool gate = (a0 > 0.05f && aEg < 0.05f);
                     setJ(44, gate ? 1.0f : 0.0f);
-                    setJ(45, gate ? a0 : aEg);
+                    setJ(45, (gate ? a0 : aEg) * 10.0f);
                 }
             } else if (*q == 'd' && curOsc == 2) {
-                float d0 = strtof(q + 1, nullptr); setJ(2, d0);
+                float d0 = strtof(q + 1, nullptr); setJ(2, constrain(fabsf(d0 - 0.5f) / 0.45f * 10.0f, 0.0f, 10.0f));
                 const char *c1 = strchr(q + 1, ','); const char *c2 = c1 ? strchr(c1 + 1, ',') : nullptr;
                 const char *c3 = c2 ? strchr(c2 + 1, ',') : nullptr; const char *c4 = c3 ? strchr(c3 + 1, ',') : nullptr;
                 setJ(35, (c4 && strtof(c4 + 1, nullptr) > 0.02f) ? 1.0f : 0.0f);
             } else if (*q == 'f' && curOsc == 1) {
-                setJ(36, strtof(q + 1, nullptr));
+                { float hz = constrain(strtof(q + 1, nullptr), 0.2f, 20.0f); setJ(36, 10.0f * logf(hz / 0.2f) / logf(100.0f)); }
             } else if (*q == 'f' && curOsc == 3) {
                 float fq = strtof(q + 1, nullptr);
                 setJ(39, (fq < 300.0f) ? -1.0f : ((fq > 600.0f) ? 1.0f : 0.0f));
@@ -385,22 +403,22 @@ inline void syncJunoGuiFromRomPatch(uint8_t patchNum) {
                 const char *c3 = c2 ? strchr(c2 + 1, ',') : nullptr; const char *c4 = c3 ? strchr(c3 + 1, ',') : nullptr;
                 if (c4) setJ(38, strtof(c4 + 1, nullptr) / 0.15f);
             } else if (*q == 'A' && curOsc == 1) {
-                setJ(37, strtof(q + 1, nullptr));
+                { float ms = constrain(strtof(q + 1, nullptr), 0.0f, 3000.0f); setJ(37, sqrtf(ms / 3000.0f) * 10.0f); }
             } else if (*q == 'A' && curOsc == 0) {
-                char *nx = nullptr; float t0 = strtof(q + 1, &nx); setJ(9, t0);
+                char *nx = nullptr; float t0 = constrain(strtof(q + 1, &nx), 1.0f, 3000.0f); setJ(9, sqrtf((t0 - 1.0f) / 2999.0f) * 10.0f);
                 if (nx && *nx == ',') { strtof(nx + 1, &nx); }
-                if (nx && *nx == ',') { float t1 = strtof(nx + 1, &nx); setJ(10, t1); }
-                if (nx && *nx == ',') { float v1 = strtof(nx + 1, &nx); setJ(11, v1); }
-                if (nx && *nx == ',') { float t3 = strtof(nx + 1, &nx); setJ(12, t3); }
+                if (nx && *nx == ',') { float t1 = constrain(strtof(nx + 1, &nx), 10.0f, 5000.0f); setJ(10, sqrtf((t1 - 10.0f) / 4990.0f) * 10.0f); }
+                if (nx && *nx == ',') { float v1 = constrain(strtof(nx + 1, &nx), 0.0f, 1.0f); setJ(11, v1 * 10.0f); }
+                if (nx && *nx == ',') { float t3 = constrain(strtof(nx + 1, &nx), 10.0f, 5000.0f); setJ(12, sqrtf((t3 - 10.0f) / 4990.0f) * 10.0f); }
             } else if (*q == 'F' && curOsc == 0) {
-                char *nx = nullptr; float fc = strtof(q + 1, &nx); setJ(5, fc);
-                if (nx && *nx == ',') { float fn = strtof(nx + 1, &nx); setJ(43, fn); }
+                char *nx = nullptr; float fc = constrain(strtof(q + 1, &nx), 20.0f, 8000.0f); setJ(5, 10.0f * logf(fc / 20.0f) / logf(400.0f));
+                if (nx && *nx == ',') { float fn = strtof(nx + 1, &nx); setJ(43, fn * 10.0f); }
                 if (nx && *nx == ',') { strtof(nx + 1, &nx); }
-                if (nx && *nx == ',') { float fe = strtof(nx + 1, &nx); setJ(41, fe < 0.0f ? 1.0f : 0.0f); setJ(7, fabsf(fe) / 6.0f); }
+                if (nx && *nx == ',') { float fe = strtof(nx + 1, &nx); setJ(41, fe < 0.0f ? 1.0f : 0.0f); setJ(7, (fabsf(fe) / 6.0f) * 10.0f); }
                 if (nx && *nx == ',') { strtof(nx + 1, &nx); }
-                if (nx && *nx == ',') { float fm = strtof(nx + 1, &nx); setJ(42, fm / 4.0f); }
+                if (nx && *nx == ',') { float fm = strtof(nx + 1, &nx); setJ(42, (fm / 4.0f) * 10.0f); }
             } else if (*q == 'R' && curOsc == 0) {
-                setJ(6, strtof(q + 1, nullptr));
+                { float r = constrain(strtof(q + 1, nullptr), 0.5f, 10.0f); setJ(6, (r - 0.5f) / 9.5f * 10.0f); }
             } else if (*q == 'x' && curOsc == 0) {
                 float eql = strtof(q + 1, nullptr);
                 setJ(8, eql < -3.0f ? 0.0f : (eql < 3.0f ? 1.0f : (eql < 9.0f ? 2.0f : 3.0f)));
@@ -410,6 +428,90 @@ inline void syncJunoGuiFromRomPatch(uint8_t patchNum) {
             }
             q++;
         } }
+        if (*q) q++;
+    }
+}
+
+inline void syncDx7GuiFromRomPatch(uint8_t patchNum) {
+    if (patchNum < 128) return;
+    const char *cmd = (const char*)pgm_read_ptr(patch_commands + patchNum);
+    if (!cmd) return;
+    for (int i = 0; i < TOTAL_PARAMS; i++) {
+        Parameter *pp = paramMatrix + i;
+        if (pp->pType == TYPE_AMY && pp->belongsToMode == MODE_DX7) {
+            pp->currentVal = pp->defaultVal;
+            if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + i) = pp->defaultVal;
+            refreshParamBox(i);
+        }
+    }
+    auto setD = [&](int pid, float val) {
+        for (int i = 0; i < TOTAL_PARAMS; i++) {
+            if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].belongsToMode == MODE_DX7 && paramMatrix[i].internalId == pid) {
+                float cv = constrain(val, paramMatrix[i].minVal, paramMatrix[i].maxVal);
+                if (isIntegerParam(paramMatrix[i])) cv = roundf(cv);
+                paramMatrix[i].currentVal = cv;
+                if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + i) = cv;
+                refreshParamBox(i);
+                break;
+            }
+        }
+    };
+    static const int lvlIds[] = {16, 18, 27, 29, 31, 33};
+    static const int ratIds[] = {17, 19, 28, 30, 32, 34};
+    int curOsc = -1;
+    const char *q = cmd;
+    while (*q) {
+        if (*q == 'v') {
+            curOsc = atoi(q + 1);
+            while (*q && *q != 'Z') {
+                if (*q == 'o' && curOsc == 0) {
+                    int alg = atoi(q + 1); setD(14, (float)alg); updateDx7AlgoDiagram(alg);
+                } else if (*q == 'b' && curOsc == 0) {
+                    setD(15, strtof(q + 1, nullptr) * 7.0f);
+                } else if (*q == 'f' && curOsc == 0) {
+                    const char *c1 = strchr(q + 1, ','); const char *c2 = c1 ? strchr(c1 + 1, ',') : nullptr;
+                    const char *c3 = c2 ? strchr(c2 + 1, ',') : nullptr; const char *c4 = c3 ? strchr(c3 + 1, ',') : nullptr;
+                    if (c4) setD(52, (strtof(c4 + 1, nullptr) / 0.15f) * 99.0f);
+                } else if (*q == 'f' && curOsc == 1) {
+                    setD(50, ((strtof(q + 1, nullptr) - 0.2f) / 18.0f) * 99.0f);
+                } else if (*q == 'A' && curOsc == 1) {
+                    setD(51, strtof(q + 1, nullptr) / 30.0f);
+                } else if (*q == 'w' && curOsc == 1) {
+                    setD(428, (float)atoi(q + 1));
+                } else if (curOsc >= 2 && curOsc <= 7) {
+                    int op = curOsc - 2;
+                    int opBase = 300 + op * 20;
+                    if (*q == 'a') {
+                        char *nx = nullptr;
+                        float a0 = strtof(q + 1, &nx);
+                        float lvl99 = constrain((a0 / 2.0f) * 99.0f, 0.0f, 99.0f);
+                        setD(*(lvlIds + op), lvl99);
+                        setD(opBase + 0, lvl99);
+                        if (nx && *nx == ',') { strtof(nx + 1, &nx); }
+                        if (nx && *nx == ',') { float av = strtof(nx + 1, &nx); setD(opBase + 5, av * 7.0f); }
+                    } else if (*q == 'I') {
+                        float r = strtof(q + 1, nullptr);
+                        setD(*(ratIds + op), r);
+                        setD(opBase + 1, r < 0.75f ? 0.0f : floorf(r));
+                    } else if (*q == 'A') {
+                        char *nx = nullptr;
+                        strtof(q + 1, &nx);
+                        if (nx && *nx == ',') strtof(nx + 1, &nx);
+                        for (int st = 0; st < 4; st++) {
+                            if (nx && *nx == ',') {
+                                float tm = strtof(nx + 1, &nx);
+                                setD(opBase + 6 + st, 100.0f - (tm / 20.0f));
+                            }
+                            if (nx && *nx == ',') {
+                                float lv = strtof(nx + 1, &nx);
+                                setD(opBase + 10 + st, lv * 99.0f);
+                            }
+                        }
+                    }
+                }
+                q++;
+            }
+        }
         if (*q) q++;
     }
 }
@@ -566,10 +668,10 @@ inline bool isIntegerParam(const Parameter &p) {
         return true;
     }
     int id = p.internalId;
-    return (id == 0 || id == 1 || id == 5 || id == 8 || id == 9 || id == 10 || id == 12 ||
+    return (id == 0 || id == 1 || id == 2 || id == 3 || id == 4 || id == 5 || id == 6 || id == 7 || id == 8 || id == 9 || id == 10 || id == 11 || id == 12 ||
             id == 13 || id == 14 || id == 15 || id == 16 || id == 18 || id == 20 || (id >= 60 && id <= 64) || (id >= 89 && id <= 91) || (id >= 101 && id <= 103) || (id >= 78 && id <= 88) || id == 26 ||
-            id == 27 || id == 29 || id == 31 || id == 33 || id == 35 || id == 37 || id == 39 ||
-            id == 40 || id == 41 || id == 112 || (id >= 115 && id <= 117) || (id >= 130 && id <= 133) || id == 136 || id == 137 || id == 141 || id == 142 || id == 144 || id == 146 || id == 44 || id == 47 || id == 152 || (id >= 49 && id <= 54) || id == 104 || id == 108 || id == 109 || id == 111);
+            id == 27 || id == 29 || id == 31 || id == 33 || id == 35 || id == 36 || id == 37 || id == 38 || id == 39 ||
+            id == 40 || id == 41 || id == 42 || id == 43 || id == 112 || (id >= 115 && id <= 117) || (id >= 130 && id <= 133) || id == 136 || id == 137 || id == 141 || id == 142 || id == 144 || id == 146 || id == 44 || id == 45 || id == 47 || id == 152 || (id >= 49 && id <= 54) || id == 104 || id == 108 || id == 109 || id == 111);
 }
 
 inline bool isFxModalTrigger(const Parameter &p) {
@@ -699,7 +801,15 @@ inline void styleParamWidget(int idx, lv_obj_t *box, lv_obj_t *lbl) {
         lv_obj_set_style_border_color(box, lv_color_hex(0x5A5A64), 0);
         lv_obj_set_style_border_width(box, 1, 0);
         lv_obj_set_style_bg_color(box, lv_color_hex(0xF85D00), LV_PART_INDICATOR);
-        char *dN=(char*)alloca(24),*dV=(char*)alloca(24); formatParamDisplay(p,dN,dV); snprintf(buf,64,"%s\n%s\nCC --",dN,dV);
+        char *dN=(char*)alloca(24),*dV=(char*)alloca(24); formatParamDisplay(p,dN,dV);
+        if (lv_obj_get_width(box) <= 40) {
+            const char *sn = dN;
+            if (strncmp(dN, "EG Rate ", 8) == 0) { char *t = (char*)alloca(8); snprintf(t, 8, "R%s", dN + 8); sn = t; }
+            else if (strncmp(dN, "EG Lvl ", 7) == 0) { char *t = (char*)alloca(8); snprintf(t, 8, "L%s", dN + 7); sn = t; }
+            snprintf(buf, 64, "%s\n%s", sn, dV);
+        } else {
+            snprintf(buf, 64, "%s\n%s\nCC --", dN, dV);
+        }
     }
     lv_label_set_text(lbl, buf);
 }
@@ -714,7 +824,16 @@ inline void refreshParamBox(int idx) {
         } else {
             int count = (activeOpDetail == 6) ? PEG_DETAIL_COUNT : OP_DETAIL_COUNT;
             int base = BASE_PARAMS + activeOpDetail * OP_DETAIL_COUNT;
-            if (idx >= base && idx < base + count) styleParamWidget(idx, opModalBoxes[idx - base], opModalLabels[idx - base]);
+            if (idx >= base && idx < base + count) {
+                int rel = idx - base;
+                int boxIdx = rel;
+                if (activeOpDetail < 6) {
+                    static const int opMapRef[] = {0,1,2,3,4,5, 6,10,7,11,8,12,9,13, 14,15};
+                    for (int m = 0; m < 16; m++) if (*(opMapRef + m) == rel) { boxIdx = m; break; }
+                }
+                styleParamWidget(idx, opModalBoxes[boxIdx], opModalLabels[boxIdx]);
+                if (activeOpDetail < 6) { extern void updateDx7OpEnvGraph(int op); updateDx7OpEnvGraph(activeOpDetail); }
+            }
         }
     }
 }
@@ -757,7 +876,7 @@ inline void applyParameterValue(int idx, float newVal) {
     sp.engine = eng;
     if (eng == ENG_OFF) { sp.voices = 0; }
     else if (eng == ENG_JUNO) { if (sp.patchOrNote > 127) sp.patchOrNote = 0; if (sp.voices == 0) sp.voices = 4; syncJunoGuiFromRomPatch(sp.patchOrNote); }
-    else if (eng == ENG_DX7) { if (sp.patchOrNote < 128) sp.patchOrNote = 128; if (sp.voices == 0) sp.voices = 4; }
+    else if (eng == ENG_DX7) { if (sp.patchOrNote < 128) sp.patchOrNote = 128; if (sp.voices == 0) sp.voices = 4; syncDx7GuiFromRomPatch(sp.patchOrNote); }
     else if (eng == ENG_SAMPLER) { sp.patchOrNote = 0; if (sp.voices == 0) sp.voices = 2; }
     else if (eng == ENG_DRUMS) { sp.patchOrNote = 36; if (sp.voices == 0) sp.voices = 9; }
     else if (eng == ENG_PIANO) { sp.patchOrNote = 0; if (sp.voices == 0 || sp.voices > 4) sp.voices = 3; }
@@ -793,6 +912,7 @@ inline void applyParameterValue(int idx, float newVal) {
     if ((float)v != p.currentVal) { p.currentVal = (float)v; refreshParamBox(idx); }
     synthParts[activePartIdx].patchOrNote = (uint8_t)v;
     if (eng == ENG_JUNO) { syncJunoGuiFromRomPatch((uint8_t)v); syncAllPartParamsToAmy(activePartIdx); }
+    else if (eng == ENG_DX7) { syncDx7GuiFromRomPatch((uint8_t)v); syncAllPartParamsToAmy(activePartIdx); }
     memset(((char*)synthPatchNames) + activePartIdx * 16, 0, 16);
     int mSel = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
     if (mSel >= 0) refreshParamBox(mSel);
@@ -1411,14 +1531,17 @@ inline void param_box_event_cb(lv_event_t *e) {
         lv_point_t pt;
         lv_indev_get_point(lv_indev_get_act(), &pt);
         int dx = abs(pt.x - dragStartX), dy = abs(pt.y - dragStartY);
-        if (!isDraggingFader && dx >= 6 && dx > dy && !isSystemActionParam(paramMatrix[idx])) {
+        bool isVert = (lv_obj_get_height(box) > lv_obj_get_width(box));
+        if (!isDraggingFader && (isVert ? (dy >= 6 && dy > dx) : (dx >= 6 && dx > dy)) && !isSystemActionParam(paramMatrix[idx])) {
             isDraggingFader = true;
             if (parameterUnderLearning == idx) parameterUnderLearning = -1;
         }
         if (isDraggingFader && !isSystemActionParam(paramMatrix[idx]) && !(paramMatrix[idx].pType == TYPE_SYSTEM && paramMatrix[idx].internalId == SYS_PARAM_PROJ_SLOT)) {
             lv_area_t coords;
             lv_obj_get_coords(box, &coords);
-            float ratio = constrain((float)(pt.x - coords.x1) / (float)(coords.x2 - coords.x1), 0.0f, 1.0f);
+            float ratio = isVert
+                ? constrain((float)(coords.y2 - pt.y) / (float)(coords.y2 - coords.y1), 0.0f, 1.0f)
+                : constrain((float)(pt.x - coords.x1) / (float)(coords.x2 - coords.x1), 0.0f, 1.0f);
             applyParameterValue(idx, paramMatrix[idx].minVal + ratio * (paramMatrix[idx].maxVal - paramMatrix[idx].minVal));
         }
     } else if (code == LV_EVENT_LONG_PRESSED && !isDraggingFader) {
@@ -1454,7 +1577,9 @@ inline void param_box_event_cb(lv_event_t *e) {
         }
         cancelPend();
         lv_area_t coords; lv_obj_get_coords(box, &coords);
-        float dir = (dragStartX >= (coords.x1 + coords.x2) / 2) ? 1.0f : -1.0f;
+        bool isVertTap = (lv_obj_get_height(box) > lv_obj_get_width(box));
+        float dir = isVertTap ? ((dragStartY <= (coords.y1 + coords.y2) / 2) ? 1.0f : -1.0f)
+                              : ((dragStartX >= (coords.x1 + coords.x2) / 2) ? 1.0f : -1.0f);
         bool hasDbl = (sysId == SYS_PARAM_PROJ_SLOT || sysId == SYS_PARAM_PATCH_FILE || sysId == SYS_PARAM_PART_SEL || isFxModalTrigger(paramMatrix[idx]) || isOpMenuTrigger(paramMatrix[idx]) || paramMatrix[idx].pType == TYPE_AMY);
         if (!hasDbl) {
             float step = isIntegerParam(paramMatrix[idx]) ? 1.0f : ((paramMatrix[idx].maxVal - paramMatrix[idx].minVal) * 0.02f);
@@ -1513,6 +1638,42 @@ inline lv_obj_t* createParamBarWidget(lv_obj_t *parent, int paramIdx, lv_obj_t *
 }
 
 static lv_obj_t *opModalTv = nullptr;
+static lv_obj_t *opEnvGraphPanel = nullptr;
+static lv_obj_t *opEnvLine = nullptr;
+static lv_obj_t *opEnvSusLine = nullptr;
+static lv_point_t *opEnvPts = nullptr;
+static lv_point_t *opEnvSusPts = nullptr;
+static lv_obj_t *opEnvDots[5] = {nullptr};
+
+inline void updateDx7OpEnvGraph(int op) {
+    if (!opEnvLine || !opEnvPts || !opEnvSusLine || !opEnvSusPts || op < 0 || op >= 6) return;
+    int base = BASE_PARAMS + op * OP_DETAIL_COUNT;
+    float r1 = paramMatrix[base + 6].currentVal, r2 = paramMatrix[base + 7].currentVal;
+    float r3 = paramMatrix[base + 8].currentVal, r4 = paramMatrix[base + 9].currentVal;
+    float l1 = paramMatrix[base + 10].currentVal, l2 = paramMatrix[base + 11].currentVal;
+    float l3 = paramMatrix[base + 12].currentVal, l4 = paramMatrix[base + 13].currentVal;
+    float w1 = 8.0f + ((99.0f - r1) / 99.0f) * 48.0f;
+    float w2 = 8.0f + ((99.0f - r2) / 99.0f) * 48.0f;
+    float w3 = 8.0f + ((99.0f - r3) / 99.0f) * 48.0f;
+    float w4 = 8.0f + ((99.0f - r4) / 99.0f) * 48.0f;
+    float tot = w1 + w2 + w3 + w4;
+    float sc = 224.0f / tot;
+    auto yOf = [](float lv) -> lv_coord_t { return (lv_coord_t)(56 - (int)((lv / 99.0f) * 48.0f)); };
+    lv_coord_t x0 = 8, x1 = (lv_coord_t)(x0 + w1 * sc), x2 = (lv_coord_t)(x1 + w2 * sc);
+    lv_coord_t x3 = (lv_coord_t)(x2 + w3 * sc), x4 = 240;
+    (opEnvPts + 0)->x = x0; (opEnvPts + 0)->y = yOf(l4);
+    (opEnvPts + 1)->x = x1; (opEnvPts + 1)->y = yOf(l1);
+    (opEnvPts + 2)->x = x2; (opEnvPts + 2)->y = yOf(l2);
+    (opEnvPts + 3)->x = x3; (opEnvPts + 3)->y = yOf(l3);
+    (opEnvPts + 4)->x = x4; (opEnvPts + 4)->y = yOf(l4);
+    lv_line_set_points(opEnvLine, opEnvPts, 5);
+    (opEnvSusPts + 0)->x = x3; (opEnvSusPts + 0)->y = yOf(l3);
+    (opEnvSusPts + 1)->x = x4; (opEnvSusPts + 1)->y = yOf(l3);
+    lv_line_set_points(opEnvSusLine, opEnvSusPts, 2);
+    for (int d = 0; d < 5; d++) {
+        if (*(opEnvDots + d)) lv_obj_set_pos(*(opEnvDots + d), (opEnvPts + d)->x - 3, (opEnvPts + d)->y - 3);
+    }
+}
 
 inline void openOpDetailModal(int opIdx) {
     if (!opModal || !opModalTv) return;
@@ -1531,22 +1692,27 @@ inline void openOpDetailModal(int opIdx) {
     } else {
         snprintf(backTabTxt, 16, "< OP%d", opIdx + 1);
         lv_tabview_rename_tab(opModalTv, 1, "OSC");
-        lv_tabview_rename_tab(opModalTv, 2, "RATE");
-        lv_tabview_rename_tab(opModalTv, 3, "LVL");
+        lv_tabview_rename_tab(opModalTv, 2, "ENV");
+        lv_tabview_rename_tab(opModalTv, 3, "MOD");
     }
     lv_tabview_rename_tab(opModalTv, 0, backTabTxt);
     lv_tabview_set_act(opModalTv, 1, LV_ANIM_OFF);
+    if (opEnvGraphPanel) {
+        if (opIdx < 6) lv_obj_clear_flag(opEnvGraphPanel, LV_OBJ_FLAG_HIDDEN);
+        else lv_obj_add_flag(opEnvGraphPanel, LV_OBJ_FLAG_HIDDEN);
+    }
 
     int base = (opIdx >= 7) ? (BASE_PARAMS + 6 * OP_DETAIL_COUNT + PEG_DETAIL_COUNT + (opIdx == 8 ? 3 : 0)) : (BASE_PARAMS + opIdx * OP_DETAIL_COUNT);
-    static const int opMap[OP_DETAIL_COUNT]  = {0,1,2,3,4,5, 6,7,8,9, 10,11,12,13,14,15};
-    static const int pegMap[OP_DETAIL_COUNT] = {0,1,2,3,-1,-1, 4,5,6,7, 8,9,-1,-1,-1,-1};
-    static const int fxMap[OP_DETAIL_COUNT]  = {0,1,2,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,-1,-1};
+    static const int opMap[]  = {0,1,2,3,4,5, 6,10,7,11,8,12,9,13, 14,15,-1,-1,-1,-1};
+    static const int pegMap[] = {0,1,2,3,-1,-1, 4,5,6,7,-1,-1,-1,-1, 8,9,-1,-1,-1,-1};
+    static const int fxMap[]  = {0,1,2,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1};
     const int *mapArr = (opIdx >= 7) ? fxMap : ((opIdx == 6) ? pegMap : opMap);
 
-    for (int k = 0; k < OP_DETAIL_COUNT; k++) {
+    for (int k = 0; k < 20; k++) {
         lv_obj_remove_event_cb(opModalBoxes[k], param_box_event_cb);
         if (mapArr[k] >= 0) {
             lv_obj_clear_flag(opModalBoxes[k], LV_OBJ_FLAG_HIDDEN);
+            if (k >= 6 && k < 14) lv_obj_set_size(opModalBoxes[k], (opIdx < 6) ? 29 : 125, (opIdx < 6) ? 138 : 67);
             int pIdx = base + mapArr[k];
             lv_obj_add_event_cb(opModalBoxes[k], param_box_event_cb, LV_EVENT_ALL, (void *)(intptr_t)pIdx);
             styleParamWidget(pIdx, opModalBoxes[k], opModalLabels[k]);
@@ -1554,6 +1720,7 @@ inline void openOpDetailModal(int opIdx) {
             lv_obj_add_flag(opModalBoxes[k], LV_OBJ_FLAG_HIDDEN);
         }
     }
+    if (opIdx < 6) updateDx7OpEnvGraph(opIdx);
     lv_obj_clear_flag(opModal, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(opModal);
 }
@@ -1585,8 +1752,8 @@ inline void buildOpDetailModal(lv_obj_t *parent) {
     lv_tabview_add_tab(opModalTv, "< OP1");
     lv_obj_t *tabs[] = {
         lv_tabview_add_tab(opModalTv, "OSC"),
-        lv_tabview_add_tab(opModalTv, "RATE"),
-        lv_tabview_add_tab(opModalTv, "LVL")
+        lv_tabview_add_tab(opModalTv, "ENV"),
+        lv_tabview_add_tab(opModalTv, "MOD")
     };
 
     lv_obj_add_event_cb(opModalTv, [](lv_event_t *e) {
@@ -1596,7 +1763,7 @@ inline void buildOpDetailModal(lv_obj_t *parent) {
         }
     }, LV_EVENT_VALUE_CHANGED, nullptr);
 
-    static const int counts[] = {6, 4, 6};
+    static const int counts[] = {6, 8, 6};
     int offset = 0;
     for (int t = 0; t < 3; t++) {
         lv_obj_set_style_bg_color(tabs[t], lv_color_hex(0xC8C6BE), 0);
@@ -1606,9 +1773,41 @@ inline void buildOpDetailModal(lv_obj_t *parent) {
         lv_obj_set_flex_flow(tabs[t], LV_FLEX_FLOW_ROW_WRAP);
         lv_obj_set_style_pad_row(tabs[t], 2, 0);
         lv_obj_set_style_pad_column(tabs[t], 2, 0);
+        if (t == 1) {
+            opEnvGraphPanel = lv_obj_create(tabs[t]);
+            lv_obj_set_size(opEnvGraphPanel, 250, 64);
+            lv_obj_set_style_bg_color(opEnvGraphPanel, lv_color_hex(0x18181E), 0);
+            lv_obj_set_style_border_color(opEnvGraphPanel, lv_color_hex(0x5A5A64), 0);
+            lv_obj_set_style_border_width(opEnvGraphPanel, 1, 0);
+            lv_obj_set_style_radius(opEnvGraphPanel, 5, 0);
+            lv_obj_set_style_pad_all(opEnvGraphPanel, 0, 0);
+            lv_obj_clear_flag(opEnvGraphPanel, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+            opEnvPts = (lv_point_t*)ps_malloc(5 * sizeof(lv_point_t));
+            opEnvSusPts = (lv_point_t*)ps_malloc(2 * sizeof(lv_point_t));
+            opEnvSusLine = lv_line_create(opEnvGraphPanel);
+            lv_obj_set_style_line_color(opEnvSusLine, lv_color_hex(0x73A456), 0);
+            lv_obj_set_style_line_width(opEnvSusLine, 1, 0);
+            lv_obj_set_style_line_dash_width(opEnvSusLine, 4, 0);
+            lv_obj_set_style_line_dash_gap(opEnvSusLine, 3, 0);
+            opEnvLine = lv_line_create(opEnvGraphPanel);
+            lv_obj_set_style_line_color(opEnvLine, lv_color_hex(0xFF5100), 0);
+            lv_obj_set_style_line_width(opEnvLine, 2, 0);
+            for (int d = 0; d < 5; d++) {
+                lv_obj_t *dot = lv_obj_create(opEnvGraphPanel);
+                lv_obj_remove_style_all(dot);
+                lv_obj_set_size(dot, 6, 6);
+                lv_obj_set_style_radius(dot, LV_RADIUS_CIRCLE, 0);
+                lv_obj_set_style_bg_color(dot, lv_color_hex(0x82FA00), 0);
+                lv_obj_set_style_bg_opa(dot, LV_OPA_COVER, 0);
+                lv_obj_set_style_border_color(dot, lv_color_hex(0x18181E), 0);
+                lv_obj_set_style_border_width(dot, 1, 0);
+                lv_obj_clear_flag(dot, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+                *(opEnvDots + d) = dot;
+            }
+        }
         for (int c = 0; c < counts[t]; c++) {
             int k = offset + c;
-            opModalBoxes[k] = createParamBarWidget(tabs[t], BASE_PARAMS + k, &opModalLabels[k]);
+            opModalBoxes[k] = createParamBarWidget(tabs[t], BASE_PARAMS + (k < 16 ? k : 0), &opModalLabels[k]);
         }
         offset += counts[t];
     }
@@ -1627,7 +1826,8 @@ inline void populateSubPage(lv_obj_t *parent, MainMode mode, SubPage page) {
     for (int i = 0; i < BASE_PARAMS; i++) {
         if (paramMatrix[i].name != nullptr && paramMatrix[i].belongsToMode == mode && paramMatrix[i].belongsToPage == page) {
             paramBoxes[i] = createParamBarWidget(parent, i, &paramLabels[i]);
-            if (mode == MODE_DRUMS) lv_obj_set_size(paramBoxes[i], 82, 67);
+            if (mode == MODE_DRUMS || (mode == MODE_JUNO && page == PAGE_OSC)) lv_obj_set_size(paramBoxes[i], 82, 67);
+            if (mode == MODE_JUNO && page == PAGE_ENV && paramMatrix[i].internalId >= 9 && paramMatrix[i].internalId <= 12) lv_obj_set_size(paramBoxes[i], 61, 136);
             paramBars[i] = paramBoxes[i];
             refreshParamBox(i);
             if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].belongsToMode == MODE_SEQ && paramMatrix[i].internalId == 147) {

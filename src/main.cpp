@@ -92,6 +92,21 @@ void uiTask(void *pvParameters) {
     loadStateFromNvs(paramMatrix, TOTAL_PARAMS, synthParts, synthParamRam, (uint8_t*)seqPatterns, sizeof(seqPatterns), seqSongChain, sizeof(seqSongChain)); if (activeStorageFS && activeStorageFS->exists("/AMY/seqvel.bin") && seqDrumVel && seqStepVel) { File vf = activeStorageFS->open("/AMY/seqvel.bin", FILE_READ); if (vf && vf.size() == SEQ_PATTERNS * SEQ_TRACKS * SEQ_STEPS * 10) { vf.read(seqDrumVel, SEQ_PATTERNS * SEQ_TRACKS * SEQ_STEPS * 9); vf.read(seqStepVel, SEQ_PATTERNS * SEQ_TRACKS * SEQ_STEPS); } if (vf) vf.close(); }
     delay(100);
     for (int i = 0; i < 16; i++) amyEnqueuePartConfig((uint8_t)i, synthParts[i].engine, synthParts[i].voices, synthParts[i].patchOrNote, synthParts[i].level);
+    {
+        Preferences sp;
+        if (sp.begin("amy_sys", true)) {
+            int sysIds[] = {SYS_PARAM_BRIGHTNESS, SYS_PARAM_MASTER_VOL, SYS_PARAM_DBLCLICK, SYS_PARAM_FLIP, SYS_PARAM_DIM_TIMEOUT, SYS_PARAM_LED_BRIGHT};
+            for (int k = 0; k < 6; k++) {
+                char *key = (char*)alloca(12);
+                snprintf(key, 12, "sys_%d", *(sysIds + k));
+                if (sp.isKey(key)) {
+                    int m = findMatrixIdxBySysId(*(sysIds + k));
+                    if (m >= 0) (paramMatrix + m)->currentVal = constrain(sp.getFloat(key, (paramMatrix + m)->currentVal), (paramMatrix + m)->minVal, (paramMatrix + m)->maxVal);
+                }
+            }
+            sp.end();
+        }
+    }
     create_synth_gui();
     g_lastTouchMs = millis();
     int mBr = findMatrixIdxBySysId(SYS_PARAM_BRIGHTNESS);
@@ -108,7 +123,7 @@ void uiTask(void *pvParameters) {
     for (;;) {
         lv_tick_inc(5); lv_timer_handler();
         uint32_t dimMs = (g_dimTimeoutMin == 1) ? 30000UL : ((uint32_t)(g_dimTimeoutMin - 1) * 60000UL);
-        if (g_dimTimeoutMin > 0 && !g_isScreenDimmed && (millis() - g_lastTouchMs) >= dimMs) { g_isScreenDimmed = true; ledcWrite(TFT_BL, 46); }
+        if (g_dimTimeoutMin > 0 && !g_isScreenDimmed && (millis() - g_lastTouchMs) >= dimMs) { g_isScreenDimmed = true; ledcWrite(TFT_BL, 26); }
         if (Serial.available()) {
             String cmd = Serial.readStringUntil('\n'); cmd.trim(); int a, b, c;
             if (sscanf(cmd.c_str(), "cc %d %d", &a, &b) == 2) onMidiCCReceived((uint8_t)a, (uint8_t)b);
@@ -137,7 +152,7 @@ void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data) {
     } else data->state = LV_INDEV_STATE_REL;
 }
 void updateSystemHardware(int id, float v) {
-    if (id == SYS_PARAM_BRIGHTNESS) { g_activeBrightnessPct = (uint8_t)constrain((int)v, 25, 100); g_isScreenDimmed = false; g_lastTouchMs = millis(); ledcWrite(TFT_BL, (uint32_t)mapValue((float)g_activeBrightnessPct, 0, 100, 0, 255)); }
+    if (id == SYS_PARAM_BRIGHTNESS) { g_activeBrightnessPct = (uint8_t)constrain((int)v, 10, 100); g_isScreenDimmed = false; g_lastTouchMs = millis(); ledcWrite(TFT_BL, (uint32_t)mapValue((float)g_activeBrightnessPct, 0, 100, 0, 255)); }
     else if (id == SYS_PARAM_DIM_TIMEOUT) { g_dimTimeoutMin = (uint8_t)constrain((int)v, 0, 10); g_lastTouchMs = millis(); if (g_dimTimeoutMin == 0 && g_isScreenDimmed) { g_isScreenDimmed = false; ledcWrite(TFT_BL, (uint32_t)mapValue((float)g_activeBrightnessPct, 0, 100, 0, 255)); } }
     else if (id == SYS_PARAM_FLIP) { g_flipScreen = (v >= 0.5f); if (gfx) gfx->setRotation(g_flipScreen ? 3 : 1); lv_obj_invalidate(lv_scr_act()); }
 }

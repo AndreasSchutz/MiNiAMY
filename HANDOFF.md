@@ -11,11 +11,11 @@
 
 ## Hårdvara & Miljö
 - **MCU**: Freenove ESP32-S3-WROOM (16MB QIO Flash, 8MB OPI PSRAM, PlatformIO `espressif32`, `upload_speed = 921600`).
-- **Display**: 2.4" ST7789 (320×240, SPI: MOSI=11, SCK=12, CS=10, DC=9, RST=14, BL=21). Vänsterflikar (`LV_DIR_LEFT`, bredd `64px`, höjd `150px` för 3×50px flikar) + Stat-bar längst ner till vänster.
+- **Display**: 2.4" ST7789 (320×240, SPI: MOSI=11, SCK=12, CS=10, DC=46, RST=-1, BL=45). Vänsterflikar (`LV_DIR_LEFT`, bredd `64px`, höjd `150px` för 3×50px flikar) + Stat-bar längst ner till vänster.
 - **Touch**: FT6336G I2C (SDA=47, SCL=48, RST=13, INT=3).
 - **Audio**: ES8311 I2S DAC (MCLK=4, BCLK=5, LRC=7, DOUT=8, DIN=6, PA=18). AMY 120 oscs på Core 1 (`amy_start(cfg)` med `i2s_dout=-1`, manuell `amy_render_audio()` -> `amyI2s.write()`).
 - **MIDI**: DIN/TRS UART RX=43, TX=44 (31250 baud).
-- **Storage**: SD-kort SPI (CS=39, MOSI=38, MCLK/SCK=40, MISO=41) med fallback till LittleFS (`/AMY/autosave.bin`, `/AMY/seqvel.bin`, `/AMY/PROJECTS/`, `/AMY/PATCHES/`).
+- **Storage**: SD-kort SPI med fallback till SPIFFS/NVS (`/AMY/autosave.bin`, `/AMY/seqvel.bin`, `/AMY/projects/`, `/AMY/patches/`, samt dedikerad NVS-namespace `"amy_sys"` för `DISP`/systeminställningar).
 - **RGB Mood-LED**: WS2812 på **GPIO 42** via `rgbLedWrite(42, r, g, b)`.
 
 ## AMY Biblioteksfakta (Verifierat i `.pio/libdeps/.../AMY Synthesizer/src/`)
@@ -27,26 +27,31 @@
   - **`v3`**: Saw (`w3` / `SAW_UP`, grundfrekvens `220 Hz` vid `8'`, styrs via `amp_coefs`).
   - **`v4`**: Sub Osc (`w1` / `PULSE`, grundfrekvens `110 Hz` vid `8'`, styrs via `amp_coefs`).
   - **`v5`**: Noise (`w5` / `NOISE`, styrs via `amp_coefs`).
+- **DX7 Röstarkitektur (`patch 128–255`, `v0–v7`)**:
+  - **`v0`**: Master ALGO (`w8`), bär `o` (Algorithm 1–32), `b` (Feedback `0.0–1.0`), `f` (PMD Vibrato via `COEF_MOD`) och `A` (Pitch EG via `eg0`).
+  - **`v1`**: LFO (`w0..w5`), bär `f` (LFO Speed) och `A` (LFO Delay).
+  - **`v2..v7`**: Operatorerna **OP1..OP6** (`osc = op + 2`), där `a` = Level (`0..2.0`), `I` = Ratio och `A` = 5-pars Rate/Level-envelope (`eg0_times[1..4]`, `eg0_values[1..4]`).
 - **VCA & Volym i AMY**: Rör aldrig `amp_coefs` på `v0` vid volymändring (orsakar hängande toner om `COEF_CONST > 0`). Styr synthvolym och VCA Level enbart via `e.synth_level` och 3-stegs `eg0`.
 
 ## Senast färdigställt
-1. **Utökad PCM- & Trumbank (155 samplingar, Gamma9001 + TR-808)**:
-   - Aktiverade `-DGAMMA9001` i `platformio.ini`, genererade `src/drums.bin` (3.6 MB) + `src/drums_bin.c` (`.incbin` i Flash) och kopplade `amy_set_gamma9001_pcm(gamma9001_pcm_data)` i `src/amy_bridge.h`.
-2. **Juno-106 Editor (`src/amy_bridge.h` & `src/synth_gui.h`)**:
-   - Mappade alla 26 Juno-reglage till rätt oscillatorer (`v0–v5`) i `applyJunoParamToAmy()` med full 10-koefficienters rensning på DCO-nivåer och PWM.
-   - Flyttade `VCA Level` (`paramId 45`) till `e.synth_level` och `VCA Mode` (`ENV`/`GATE`) till 3-stegs `eg0` (eliminerade hängande toner).
-   - Flyttade Juno `HPF` (`paramId 8`) från globala `eq_l` till lokalt `FILTER_HPF` på källoscillatorerna `v2–v5`, samt kopplade `Chorus` (`paramId 13`) till buss 0.
-   - Lade till `syncJunoGuiFromRomPatch()` i `src/synth_gui.h` (inkluderar `<patches.h>`) som läser in ROM-patchens faktiska parametrar till reglagen vid byte av `Patch/Note` (`0–127`) och synkar till AMY.
-   - Gjorde **Reset Synth** på Juno helt patch-oberoende (`Init Juno`): återställer samtliga 26 parametrar till rena grundvärden (`defaultVal`, med `Chorus = 0`) och synkar dem direkt till AMY så ljud kan byggas från scratch.
-   - Lade till tydliga UI-etiketter för Juno: `ON`/`OFF` (Saw, Pulse), `MAN`/`LFO` (PWM Mode), `16'`/`8'`/`4'` (Octave), `POS (+)`/`NEG (-)` (Env Pol), `ENV`/`GATE` (VCA Mode) och `OFF`/`LVL 1–3` (HPF).
-   - Separerade `Synth Vol` (`SYS_PARAM_PART_LVL`) till ett eget `AMY_MSG_PART_LEVEL`-event så att volymändring inte laddar om ROM-patchen och skriver över skruvade reglage.
-3. **Git- & Byggoptimering**:
-   - Kopplade projektet till GitHub (`AndreasSchutz/MiNiAMY`), skapade `.gitignore` och satte `upload_speed = 921600` i `platformio.ini`.
+1. **Juno-106 Editor – Autentisk 0–10-skala, 3×3 DCO & Vertikala ADSR-reglar (`src/synth_gui.h` & `src/amy_bridge.h`)**:
+   - Gav samtliga kontinuerliga Juno-reglage (`PWM`, `DCO LFO`, `Sub Osc`, `Noise`, `Portamento`, `LFO Rate`, `LFO Delay`, `Cutoff`, `Res`, `Env Mod`, `LFO Mod`, `Key Follow`, `Attack`, `Decay`, `Sustain`, `Release`, `VCA Level`) en enhetlig **0–10-skala i rena heltal** (inga decimaler) med musikalisk logaritmisk/kvadratisk mappning till AMY och exakt invers vid ROM-patchladdning.
+   - Gjorde **DCO-fliken** till ett komplett **3×3-rutnät (`82×67 px`)** i originalordning: Rad 1 (`Saw`, `Pulse`, `PWM Mode`), Rad 2 (`Octave`, `DCO LFO`, `PWM`), Rad 3 (`Sub Osc`, `Noise`, `Portamento`).
+   - Bytte plats på `Env Pol` och `Env Mod` under **VCF** (`Cutoff`, `Res`, `Env Pol` / `Env Mod`, `LFO Mod`, `Key Follow`).
+   - Gjorde om **ENV-fliken** med `VCA Mode` och `VCA Level` överst samt **4 stående ADSR-reglar (`61×136 px`)** i rad längst ner (`Attack`, `Decay`, `Sustain`, `Release`) med vertikal touch-dragning nerifrån och upp.
+   - Uppdaterade `syncJunoGuiFromRomPatch()` så att samtliga 26 Juno-reglage (inkl. `LFO Wave` och `Portamento`) nollställs till grundvärden före patchinläsning.
+2. **DX7 Editor – Rätt oscillatorer (`v2..v7`), ROM-synk & Live ENV-graf (`src/amy_bridge.h` & `src/synth_gui.h`)**:
+   - Rättade `applyDx7ParamToAmy()` så OP1–OP6 styr **`osc = 2..7` (`v2..v7`)**, LFO styr **`osc = 1` (`v1`)** och Algo/Feedback/Octave/PMD/Pitch EG styr **`osc = 0` (`v0`)**.
+   - Lade till `syncDx7GuiFromRomPatch()` som synkar `Algorithm`, `Feedback`, `PMD Vib`, `LFO Speed/Delay/Wave` samt alla 6 operatorernas `Level`, `Ratio/Coarse` och 8-parametrs `EG Rate/Lvl 1–4` vid byte av DX7-patch (`128–255`).
+   - Byggde om operator-modalen (`< OPx | OSC | ENV | MOD`) med en samlad **`ENV`-flik**: en **live-uppdaterad `lv_line`-envelopegraf (`250×64 px`)** med streckad sustain-linje och **5 lysande LED-kulor (`0x82FA00`)** på brytpunkterna, samt **8 höga stående reglar (`29×138 px`)** i ordningen `R1 | L1 | R2 | L2 | R3 | L3 | R4 | L4` direkt under grafen.
+3. **System / DISP NVS-persistens & 10% Bakgrundsljus (`src/synth_gui.h` & `src/main.cpp`)**:
+   - Sparar systeminställningar (`SYS_PARAM_BRIGHTNESS`, `SYS_PARAM_MASTER_VOL`, `SYS_PARAM_DBLCLICK`, `SYS_PARAM_FLIP`, `SYS_PARAM_DIM_TIMEOUT`, `SYS_PARAM_LED_BRIGHT`) omedelbart i egen NVS-namespace (`"amy_sys"`) så de överlever både omstarter och reflash (`pio run -t upload`).
+   - Sänkte lägsta bakgrundsljus på både `Brightness`-knappen och `autodim` till **10% (PWM `26`)** anpassat för nya displaymodulen.
 
 ## Kvarstående / Nästa steg
 1. **Utöka `PCM -> PLAYER` (2 lediga platser i 3×2-rutnätet)**:
-   - Lägg till **Key Follow / Key Track** (`freq_coefs[COEF_NOTE]` `0.0` vs `1.0`) och **Portamento / Glide** (`portamento_ms`, `0–1000 ms`).
+   - Lägg till **Key Follow / Key Track** (`freq_coefs[COEF_NOTE]` `0.0` vs `1.0`) och **Portamento / Glide** (`portamento_ms`, `0–10` -> `0–1000 ms`).
    - Valfritt/framöver: Loop Start / Loop End (`loopstart` / `loopend`) samt laddning av egna `.wav`-filer från SD-kortet (`/AMY/samples/`) till PSRAM.
-2. **Genomgång & verifiering av DX7- / Piano-editorerna**:
-   - Gör en samlad Cold-Read Audit av `applyDx7ParamToAmy()` och `applyPianoParamToAmy()` mot `NUM_COMBO_COEFS = 10` och AMY:s FM/Piano-patchar.
-3. **Fortsatta finjusteringar efter speltest**.
+2. **Genomgång & verifiering av Piano-editorn**:
+   - Gör en samlad Cold-Read Audit av `applyPianoParamToAmy()` mot `NUM_COMBO_COEFS = 10` och AMY:s `patch 256` (`dpwe piano`).
+3. **Fortsatta finjusteringar efter speltest** (bl.a. speltest av nya DX7 `ENV`-grafen & NVS-persistens för `DblClick`).
