@@ -10,6 +10,7 @@
 - **Git-arbetsflöde**: Projektet är kopplat till `AndreasSchutz/MiNiAMY` (`main`) med `credential.helper store` och `.gitignore` som exkluderar `.pio/` och `src/drums.bin`. Använd `git add -A && git commit -m "..." && git push` vid milstolpar så filer kan hämtas via `://githubusercontent.com` i början av nästa session.
 
 ## Hårdvara & Miljö
+- **Komplett modul**: https://www.lcdwiki.com/res/ES3C28P/ES3C28P_ES2N28P_Specification_V1.0.pdf
 - **MCU**: Freenove ESP32-S3-WROOM (16MB QIO Flash, 8MB OPI PSRAM, PlatformIO `espressif32`, `upload_speed = 921600`).
 - **Display**: 2.4" ST7789 (320×240, SPI: MOSI=11, SCK=12, CS=10, DC=46, RST=-1, BL=45). Vänsterflikar (`LV_DIR_LEFT`, bredd `64px`, höjd `150px` för 3×50px flikar) + Stat-bar längst ner till vänster.
 - **Touch**: FT6336G I2C (SDA=47, SCL=48, RST=13, INT=3).
