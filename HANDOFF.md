@@ -7,7 +7,7 @@
 - **Färre kompileringar (Buntning)**: Det stora PCM-biblioteket (`src/drums.bin`, 3.6 MB) gör uppladdningen långsam. Bunta ihop relaterade kodändringar i ett enda Python-skript före `pio run -t upload` (`upload_speed = 921600` är aktiverat i `platformio.ini`).
 - **Hakparenteser & URL:er i markdown**: Använd **aldrig** råa hakparenteser för array-deklarationer i C++-kodblock (använd `chr(91)` + `chr(93)` i Python-patchar) och lägg långa GitHub-URL:er i en bash-variabel (`REPO=...`) så att markdown-parsern aldrig klipper dem.
 - **Minneshantering**: Använd `ps_malloc` / `ps_calloc` / `alloca` för större buffertar och strängar för att hålla stack och intern SRAM fri.
-- **Git-arbetsflöde**: Projektet är kopplat till `AndreasSchutz/MiNiAMY` (`main`) med `credential.helper store` och `.gitignore` som exkluderar `.pio/` och `src/drums.bin`. Använd `git add -A && git commit -m "..." && git push` vid milstolpar så filer kan hämtas via `://githubusercontent.com`.
+- **Git-arbetsflöde**: Projektet är kopplat till `AndreasSchutz/MiNiAMY` (`main`) med `credential.helper store` och `.gitignore` som exkluderar `.pio/` och `src/drums.bin`. Använd `git add -A && git commit -m "..." && git push` vid milstolpar så filer kan hämtas via `://githubusercontent.com` i början av nästa session.
 
 ## Hårdvara & Miljö
 - **MCU**: Freenove ESP32-S3-WROOM (16MB QIO Flash, 8MB OPI PSRAM, PlatformIO `espressif32`, `upload_speed = 921600`).
@@ -36,7 +36,8 @@
    - Mappade alla 26 Juno-reglage till rätt oscillatorer (`v0–v5`) i `applyJunoParamToAmy()` med full 10-koefficienters rensning på DCO-nivåer och PWM.
    - Flyttade `VCA Level` (`paramId 45`) till `e.synth_level` och `VCA Mode` (`ENV`/`GATE`) till 3-stegs `eg0` (eliminerade hängande toner).
    - Flyttade Juno `HPF` (`paramId 8`) från globala `eq_l` till lokalt `FILTER_HPF` på källoscillatorerna `v2–v5`, samt kopplade `Chorus` (`paramId 13`) till buss 0.
-   - Lade till `syncJunoGuiFromRomPatch()` i `src/synth_gui.h` (inkluderar `<patches.h>`) som läser in ROM-patchens faktiska parametrar till reglagen vid byte av `Patch/Note` (`0–127`) och synkar till AMY, samt nollställer `Chorus = 0` vid Reset av Juno.
+   - Lade till `syncJunoGuiFromRomPatch()` i `src/synth_gui.h` (inkluderar `<patches.h>`) som läser in ROM-patchens faktiska parametrar till reglagen vid byte av `Patch/Note` (`0–127`) och synkar till AMY.
+   - Gjorde **Reset Synth** på Juno helt patch-oberoende (`Init Juno`): återställer samtliga 26 parametrar till rena grundvärden (`defaultVal`, med `Chorus = 0`) och synkar dem direkt till AMY så ljud kan byggas från scratch.
    - Lade till tydliga UI-etiketter för Juno: `ON`/`OFF` (Saw, Pulse), `MAN`/`LFO` (PWM Mode), `16'`/`8'`/`4'` (Octave), `POS (+)`/`NEG (-)` (Env Pol), `ENV`/`GATE` (VCA Mode) och `OFF`/`LVL 1–3` (HPF).
    - Separerade `Synth Vol` (`SYS_PARAM_PART_LVL`) till ett eget `AMY_MSG_PART_LEVEL`-event så att volymändring inte laddar om ROM-patchen och skriver över skruvade reglage.
 3. **Git- & Byggoptimering**:
