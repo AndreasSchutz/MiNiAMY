@@ -326,7 +326,7 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
             amy_add_event(&e);
         } else if (paramId == 53) {
             for (uint16_t op = 0; op < 6; op++) {
-                amy_event e = amy_default_event(); e.synth = amySynth; e.osc = (uint16_t)(op + 2);
+                amy_event e = amy_default_event(); e.synth = amySynth; e.osc = (uint16_t)(7 - op);
                 *(e.amp_coefs + COEF_MOD) = (v / 99.0f) * 0.8f;
                 amy_add_event(&e);
             }
@@ -351,11 +351,12 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
     }
 }
 
-static uint32_t g_lastPartSig[16] = {0};
+static uint8_t g_partEngine[16] = {0};
 
 inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
     uint8_t amySynth = m.synthSlot + 1;
     if (m.type == AMY_MSG_PART_LEVEL) {
+        g_partEngine[m.synthSlot & 15] = m.engine;
         g_partVol[m.synthSlot & 15] = constrain(m.val1, 0.0f, 1.5f);
         amy_event e = amy_default_event(); e.synth = amySynth;
         e.synth_level = g_partVol[m.synthSlot & 15];
@@ -372,7 +373,7 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
         if (m.engine == 3) { int16_t pv = (int16_t)m.patchOrNote; e.oscs_per_voice = 1; e.wave = PCM; e.preset = (pv >= 19) ? (int16_t)(256 + (pv - 19)) : pv; }
         else if (m.engine == 4) { e.oscs_per_voice = 1; e.wave = PCM; }
         else if (m.engine == 5) { e.patch_number = 256; }
-        else { if (m.engine == 1) e.oscs_per_voice = 6; else if (m.engine == 2) e.oscs_per_voice = 8; e.patch_number = m.patchOrNote; }
+        else { e.patch_number = m.patchOrNote; }
         e.synth_level = g_partVol[m.synthSlot & 15];
         amy_add_event(&e);
     } else if (m.type == AMY_MSG_MASTER_VOL) {
@@ -401,10 +402,11 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
     } else if (m.type == AMY_MSG_PARAM_CHANGE) {
         amy_event e = amy_default_event();
         e.synth = amySynth;
-        applyJunoParamToAmy(amySynth, m.paramId, m.val1);
-        applyPianoParamToAmy(amySynth, m.paramId, m.val1);
-        applySamplerParamToAmy(amySynth, m.paramId, m.val1);
-        applyDx7ParamToAmy(amySynth, m.paramId, m.val1);
+        uint8_t eng = g_partEngine[m.synthSlot & 15];
+        if (eng == 1) applyJunoParamToAmy(amySynth, m.paramId, m.val1);
+        else if (eng == 5) applyPianoParamToAmy(amySynth, m.paramId, m.val1);
+        else if (eng == 3) applySamplerParamToAmy(amySynth, m.paramId, m.val1);
+        else if (eng == 2) applyDx7ParamToAmy(amySynth, m.paramId, m.val1);
         switch (m.paramId) {
                                                 case 40: { float r = constrain(m.val1 / 10.0f, 0.0f, 1.0f); e.portamento_ms = (uint16_t)(r * r * 1000.0f); amy_add_event(&e); break; }
                         case 14: e.algorithm = (uint8_t)m.val1; amy_add_event(&e); break;
