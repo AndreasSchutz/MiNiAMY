@@ -177,6 +177,7 @@ inline void saveStateToNvs(ParamT *matrix, int paramCount, PartT *parts, float *
 
 template<typename ParamT, typename PartT>
 inline bool loadStateFromNvs(ParamT *matrix, int paramCount, PartT *parts, float *partRam = nullptr, uint8_t *seqData = nullptr, size_t seqBytes = 0, uint8_t *songData = nullptr, size_t songBytes = 0) {
+    if (activeStorageFS && activeStorageFS->exists("/AMY/seqvel.bin")) activeStorageFS->remove("/AMY/seqvel.bin");
     if (usingPhysicalSD && activeStorageFS && activeStorageFS->exists("/AMY/autosave.bin")) {
         File f = activeStorageFS->open("/AMY/autosave.bin", FILE_READ);
         if (f) {

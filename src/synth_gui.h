@@ -47,7 +47,7 @@ struct Parameter {
 #define SYS_PARAM_PATCH_FILE 16
 #define SYS_PARAM_LED_BRIGHT 17
 
-#define BASE_PARAMS 150
+#define BASE_PARAMS 156
 #define OP_DETAIL_COUNT 16
 #define PEG_DETAIL_COUNT 10
 #define FX_DETAIL_COUNT 6
@@ -169,9 +169,9 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     {TYPE_AMY, 85, "BPM",        40.0,  240.0,  120.0,  255, MODE_SEQ,    PAGE_OSC},
     {TYPE_AMY, 86, "Swing",      0.0,   75.0,   0.0,    255, MODE_SEQ,    PAGE_OSC},
     {TYPE_AMY, 88, "Steps",      1.0,   16.0,   16.0,   255, MODE_SEQ,    PAGE_OSC},
-    {TYPE_AMY, 147, "",           0.0,   1.0,    0.0,    255, MODE_SEQ,    PAGE_OSC},
     {TYPE_AMY, 87, "Act Pat",    1.0,   16.0,   1.0,    255, MODE_SEQ,    PAGE_OSC},
     {TYPE_AMY, 146, "Max Pat",    1.0,   16.0,   16.0,   255, MODE_SEQ,    PAGE_OSC},
+    {TYPE_AMY, 147, "Copy To",    1.0,  16.0,    2.0,    255, MODE_SEQ,    PAGE_OSC},
 
     // --- PIANO (17 st: TONE, TIMBRE, MIX, ENV) ---
     {TYPE_AMY, 104, "Brightness", 200.0, 8000.0, 2800.0, 255, MODE_PIANO, PAGE_OSC},
@@ -198,6 +198,8 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     {TYPE_AMY, 132, "Fine Tune", -50.0,  50.0,   0.0,    255, MODE_SAMPLER, PAGE_OSC},
     {TYPE_AMY, 133, "Loop",       0.0,   1.0,    0.0,    255, MODE_SAMPLER, PAGE_OSC},
     {TYPE_AMY, 134, "Pan",        0.0,   1.0,    0.5,    255, MODE_SAMPLER, PAGE_OSC},
+    {TYPE_AMY, 153, "Key Follow", 0.0,   1.0,    1.0,    255, MODE_SAMPLER, PAGE_OSC},
+    {TYPE_AMY, 154, "Portamento", 0.0,  10.0,    0.0,    255, MODE_SAMPLER, PAGE_OSC},
     {TYPE_AMY, 136, "Flt Type",   0.0,   3.0,    1.0,    255, MODE_SAMPLER, PAGE_FILTER},
     {TYPE_AMY, 137, "Cutoff",     40.0,  8000.0, 4500.0, 255, MODE_SAMPLER, PAGE_FILTER},
     {TYPE_AMY, 138, "Resonance",  0.5,   10.0,   1.0,    255, MODE_SAMPLER, PAGE_FILTER},
@@ -671,7 +673,7 @@ inline bool isIntegerParam(const Parameter &p) {
     return (id == 0 || id == 1 || id == 2 || id == 3 || id == 4 || id == 5 || id == 6 || id == 7 || id == 8 || id == 9 || id == 10 || id == 11 || id == 12 ||
             id == 13 || id == 14 || id == 15 || id == 16 || id == 18 || id == 20 || (id >= 60 && id <= 64) || (id >= 89 && id <= 91) || (id >= 101 && id <= 103) || (id >= 78 && id <= 88) || id == 26 ||
             id == 27 || id == 29 || id == 31 || id == 33 || id == 35 || id == 36 || id == 37 || id == 38 || id == 39 ||
-            id == 40 || id == 41 || id == 42 || id == 43 || id == 112 || (id >= 115 && id <= 117) || (id >= 130 && id <= 133) || id == 136 || id == 137 || id == 141 || id == 142 || id == 144 || id == 146 || id == 44 || id == 45 || id == 47 || id == 152 || (id >= 49 && id <= 54) || id == 104 || id == 108 || id == 109 || id == 111);
+            id == 40 || id == 41 || id == 42 || id == 43 || id == 112 || (id >= 115 && id <= 117) || (id >= 130 && id <= 133) || id == 136 || id == 137 || id == 141 || id == 142 || id == 144 || id == 146 || id == 147 || id == 153 || id == 154 || id == 44 || id == 45 || id == 47 || id == 152 || (id >= 49 && id <= 54) || id == 104 || id == 108 || id == 109 || id == 111);
 }
 
 inline bool isFxModalTrigger(const Parameter &p) {
@@ -758,7 +760,8 @@ inline void formatParamDisplay(const Parameter &p, char *outName, char *outVal) 
     snprintf(outVal, 24, "%s", hW[constrain((int)p.currentVal, 0, 3)]);
     return;
   }
-  if (p.pType == TYPE_AMY && p.internalId == 133) {
+  if (p.pType == TYPE_AMY && p.internalId == 147) { if (fileFeedbackId == 147 && millis() < fileFeedbackUntil) snprintf(outVal, 24, "%s", fileFeedbackTxt); else snprintf(outVal, 24, "P%d", constrain((int)p.currentVal, 1, 16)); return; }
+  if (p.pType == TYPE_AMY && (p.internalId == 133 || p.internalId == 153)) {
     snprintf(outVal, 24, "%s", (p.currentVal >= 0.5f) ? "ON" : "OFF");
     return;
   } else if (p.pType == TYPE_AMY && p.internalId == 136) {
@@ -1572,6 +1575,7 @@ inline void param_box_event_cb(lv_event_t *e) {
                 static const int opIds[] = {16, 18, 27, 29, 31, 33};
                 for (int op = 0; op < 6; op++) if (paramMatrix[idx].internalId == opIds[op]) { openOpDetailModal(op); return; }
             }
+            if (paramMatrix[idx].pType == TYPE_AMY && paramMatrix[idx].internalId == 147) { int dst = constrain((int)paramMatrix[idx].currentVal - 1, 0, SEQ_PATTERNS - 1); if (dst != currentSeqPattern) { copySeqPattern(currentSeqPattern, dst); markStorageDirty(); fileFeedbackId = 147; fileFeedbackTxt = "COPIED!"; fileFeedbackUntil = millis() + 1200; refreshParamBox(idx); } return; }
             if (paramMatrix[idx].pType == TYPE_AMY) { openStdValModal(idx); return; }
             if (sysId == SYS_PARAM_PART_SEL) { openPatchRenameModal(); return; }
         }
@@ -1616,14 +1620,14 @@ inline lv_obj_t* createParamBarWidget(lv_obj_t *parent, int paramIdx, lv_obj_t *
     lv_obj_clear_flag(box, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(box, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(box, param_box_event_cb, LV_EVENT_ALL, (void *)(intptr_t)paramIdx);
-    bool hasDblTap = isOpMenuTrigger(paramMatrix[paramIdx]) || isFxModalTrigger(paramMatrix[paramIdx]) || (paramMatrix[paramIdx].pType == TYPE_SYSTEM && (paramMatrix[paramIdx].internalId == SYS_PARAM_PART_SEL || paramMatrix[paramIdx].internalId == SYS_PARAM_PATCH_FILE || paramMatrix[paramIdx].internalId == SYS_PARAM_PROJ_SLOT));
+    bool hasDblTap = isOpMenuTrigger(paramMatrix[paramIdx]) || isFxModalTrigger(paramMatrix[paramIdx]) || (paramMatrix[paramIdx].pType == TYPE_SYSTEM && (paramMatrix[paramIdx].internalId == SYS_PARAM_PART_SEL || paramMatrix[paramIdx].internalId == SYS_PARAM_PATCH_FILE || paramMatrix[paramIdx].internalId == SYS_PARAM_PROJ_SLOT)) || (paramMatrix[paramIdx].pType == TYPE_AMY && paramMatrix[paramIdx].internalId == 147);
     if (hasDblTap) {
         lv_obj_t *frame = lv_obj_create(box);
         if (paramMatrix[paramIdx].pType == TYPE_SYSTEM && paramMatrix[paramIdx].internalId == SYS_PARAM_PART_SEL) g_synthEditFrame = frame;
         lv_obj_set_size(frame, 125, 67);
         lv_obj_center(frame);
         lv_obj_set_style_bg_opa(frame, LV_OPA_TRANSP, 0);
-        bool isSaveFrame = (paramMatrix[paramIdx].pType == TYPE_SYSTEM && (paramMatrix[paramIdx].internalId == SYS_PARAM_PROJ_SLOT || paramMatrix[paramIdx].internalId == SYS_PARAM_PATCH_FILE));
+        bool isSaveFrame = (paramMatrix[paramIdx].pType == TYPE_SYSTEM && (paramMatrix[paramIdx].internalId == SYS_PARAM_PROJ_SLOT || paramMatrix[paramIdx].internalId == SYS_PARAM_PATCH_FILE)) || (paramMatrix[paramIdx].pType == TYPE_AMY && paramMatrix[paramIdx].internalId == 147);
         lv_obj_set_style_border_color(frame, lv_color_hex(isSaveFrame ? 0x73A456 : 0x5783AB), 0);
         lv_obj_set_style_border_width(frame, 4, 0);
         lv_obj_set_style_radius(frame, 6, 0);
@@ -1830,13 +1834,6 @@ inline void populateSubPage(lv_obj_t *parent, MainMode mode, SubPage page) {
             if (mode == MODE_JUNO && page == PAGE_ENV && paramMatrix[i].internalId >= 9 && paramMatrix[i].internalId <= 12) lv_obj_set_size(paramBoxes[i], 61, 136);
             paramBars[i] = paramBoxes[i];
             refreshParamBox(i);
-            if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].belongsToMode == MODE_SEQ && paramMatrix[i].internalId == 147) {
-                lv_obj_set_style_bg_opa(paramBoxes[i], LV_OPA_TRANSP, 0);
-                lv_obj_set_style_bg_opa(paramBoxes[i], LV_OPA_TRANSP, LV_PART_INDICATOR);
-                lv_obj_set_style_border_width(paramBoxes[i], 0, 0);
-                lv_obj_clear_flag(paramBoxes[i], LV_OBJ_FLAG_CLICKABLE);
-                lv_obj_add_flag(paramLabels[i], LV_OBJ_FLAG_HIDDEN);
-            }
         }
     }
 }

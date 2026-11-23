@@ -6,13 +6,7 @@
 #define SEQ_TRACKS   16
 #define SEQ_STEPS    16
 
-static uint8_t seqPatterns[SEQ_PATTERNS][SEQ_TRACKS][SEQ_STEPS] = {
-    {
-        {1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0},
-        {0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0},
-        {0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0}
-    }
-};
+static uint8_t seqPatterns[SEQ_PATTERNS][SEQ_TRACKS][SEQ_STEPS] = {{{0}}};
 static uint8_t *seqDrumVel = (uint8_t*)ps_calloc(SEQ_PATTERNS * SEQ_TRACKS * SEQ_STEPS * 9, 1);
 static uint8_t *seqStepVel = (uint8_t*)ps_calloc(SEQ_PATTERNS * SEQ_TRACKS * SEQ_STEPS, 1);
 inline uint8_t& drumVelAt(int p, int t, int s, int d) { return seqDrumVel[(((p * SEQ_TRACKS + t) * SEQ_STEPS + s) * 9) + d]; }
@@ -28,7 +22,7 @@ static volatile int seqPlayheadStep = -1;
 static volatile bool seqIsPlaying = false;
 static volatile bool seqMidiRecActive = false;
 #define SEQ_SONG_STEPS 32
-static uint8_t seqSongChain[SEQ_SONG_STEPS] = {1, 2, 0};
+static uint8_t seqSongChain[SEQ_SONG_STEPS] = {1, 0};
 static volatile bool seqSongModeActive = false;
 static volatile int seqSongPos = 0;
 
@@ -78,6 +72,13 @@ inline void rebuildSeqDropdownOptions() {
     }
     lv_dropdown_set_options(seqTrackDropdown, opts);
     lv_dropdown_set_selected(seqTrackDropdown, currentSeqTrack);
+}
+
+inline void copySeqPattern(int srcPat, int dstPat) {
+    if (srcPat < 0 || srcPat >= SEQ_PATTERNS || dstPat < 0 || dstPat >= SEQ_PATTERNS || srcPat == dstPat) return;
+    memcpy(seqPatterns + dstPat, seqPatterns + srcPat, SEQ_TRACKS * SEQ_STEPS);
+    if (seqDrumVel) memcpy(seqDrumVel + dstPat * SEQ_TRACKS * SEQ_STEPS * 9, seqDrumVel + srcPat * SEQ_TRACKS * SEQ_STEPS * 9, SEQ_TRACKS * SEQ_STEPS * 9);
+    if (seqStepVel) memcpy(seqStepVel + dstPat * SEQ_TRACKS * SEQ_STEPS, seqStepVel + srcPat * SEQ_TRACKS * SEQ_STEPS, SEQ_TRACKS * SEQ_STEPS);
 }
 
 inline void loadDemoSeqPatterns() {

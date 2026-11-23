@@ -214,7 +214,7 @@ inline void applyPianoParamToAmy(uint8_t amySynth, int paramId, float v) {
 }
 
 inline void applySamplerParamToAmy(uint8_t amySynth, int paramId, float v) {
-    if (paramId < 130 || paramId > 145) return;
+    if ((paramId < 130 || paramId > 145) && paramId != 153 && paramId != 154) return;
     static float sTune = 0.0f;
     static float sFine = 0.0f;
     amy_event e = amy_default_event(); e.synth = amySynth;
@@ -239,6 +239,8 @@ inline void applySamplerParamToAmy(uint8_t amySynth, int paramId, float v) {
     else if (paramId == 143) { *(e.eg0_values + 1) = v; *(e.eg0_values + 2) = v; amy_add_event(&e); }
     else if (paramId == 144) { *(e.eg0_times + 3) = (int32_t)v; *(e.eg0_values + 3) = 0.0f; amy_add_event(&e); }
     else if (paramId == 145) { *(e.amp_coefs + COEF_VEL) = v; amy_add_event(&e); }
+    else if (paramId == 153) { *(e.freq_coefs + COEF_NOTE) = (v >= 0.5f) ? 1.0f : 0.0f; amy_add_event(&e); }
+    else if (paramId == 154) { float r = constrain(v / 10.0f, 0.0f, 1.0f); e.portamento_ms = (uint16_t)(r * r * 1000.0f); amy_add_event(&e); }
 }
 
 inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
