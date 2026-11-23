@@ -252,10 +252,10 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
     static bool  opFixed[]  = {false, false, false, false, false, false};
 
     for (uint16_t op = 0; op < 6; op++) {
-        uint16_t oscIdx = (uint16_t)(op + 2);
+        uint16_t oscIdx = (uint16_t)(7 - op);
         if (paramId == *(lvlIds + op)) {
             amy_event e = amy_default_event(); e.synth = amySynth; e.osc = oscIdx;
-            *(e.amp_coefs + COEF_CONST) = (v / 99.0f) * 2.0f;
+            *(e.amp_coefs + COEF_CONST) = (v <= 0.5f) ? 0.0f : ((v / 99.0f) * 2.0f);
             amy_add_event(&e);
             return;
         }
@@ -271,10 +271,10 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
         uint16_t op = (uint16_t)((paramId - 300) / 20);
         int k = (paramId - 300) % 20;
         if (op >= 6) return;
-        uint16_t oscIdx = (uint16_t)(op + 2);
+        uint16_t oscIdx = (uint16_t)(7 - op);
         amy_event e = amy_default_event(); e.synth = amySynth; e.osc = oscIdx;
         if (k == 0) {
-            *(e.amp_coefs + COEF_CONST) = (v / 99.0f) * 2.0f;
+            *(e.amp_coefs + COEF_CONST) = (v <= 0.5f) ? 0.0f : ((v / 99.0f) * 2.0f);
         } else if (k >= 1 && k <= 4) {
             if (k == 1) *(opCoarse + op) = v;
             else if (k == 2) *(opFine + op) = v;
@@ -287,6 +287,7 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
                 *(e.freq_coefs + COEF_CONST) = 440.0f * mult;
             } else {
                 *(e.freq_coefs + COEF_NOTE) = 1.0f;
+                *(e.freq_coefs + COEF_CONST) = 0.0f;
                 e.ratio = mult;
             }
         } else if (k == 5) {
@@ -371,7 +372,7 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
         if (m.engine == 3) { int16_t pv = (int16_t)m.patchOrNote; e.oscs_per_voice = 1; e.wave = PCM; e.preset = (pv >= 19) ? (int16_t)(256 + (pv - 19)) : pv; }
         else if (m.engine == 4) { e.oscs_per_voice = 1; e.wave = PCM; }
         else if (m.engine == 5) { e.patch_number = 256; }
-        else { e.patch_number = m.patchOrNote; }
+        else { if (m.engine == 1) e.oscs_per_voice = 6; else if (m.engine == 2) e.oscs_per_voice = 8; e.patch_number = m.patchOrNote; }
         e.synth_level = g_partVol[m.synthSlot & 15];
         amy_add_event(&e);
     } else if (m.type == AMY_MSG_MASTER_VOL) {

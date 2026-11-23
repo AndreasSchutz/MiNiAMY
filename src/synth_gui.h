@@ -481,7 +481,7 @@ inline void syncDx7GuiFromRomPatch(uint8_t patchNum) {
                 } else if (*q == 'w' && curOsc == 1) {
                     setD(428, (float)atoi(q + 1));
                 } else if (curOsc >= 2 && curOsc <= 7) {
-                    int op = curOsc - 2;
+                    int op = 7 - curOsc;
                     int opBase = 300 + op * 20;
                     if (*q == 'a') {
                         char *nx = nullptr;
@@ -853,11 +853,13 @@ inline void applyParameterValue(int idx, float newVal) {
         int detIdx = BASE_PARAMS + op * OP_DETAIL_COUNT;
         if (p.pType == TYPE_AMY && p.internalId == opLvlIds[op]) {
             paramMatrix[detIdx].currentVal = p.currentVal;
+            if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + detIdx) = p.currentVal;
             refreshParamBox(detIdx);
         } else if (idx == detIdx) {
             for (int m = 0; m < BASE_PARAMS; m++) {
                 if (paramMatrix[m].pType == TYPE_AMY && paramMatrix[m].internalId == opLvlIds[op]) {
                     paramMatrix[m].currentVal = p.currentVal;
+                    if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + m) = p.currentVal;
                     refreshParamBox(m);
                 }
             }
