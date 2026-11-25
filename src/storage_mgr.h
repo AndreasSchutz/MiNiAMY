@@ -76,6 +76,7 @@ inline void initStorageSubsystem() {
 }
 
 inline bool pollStorageHotSwap() {
+    if (!usingPhysicalSD) return false;
     static uint32_t lastCheckMs = 0;
     uint32_t now = millis();
     if (now - lastCheckMs < 4000) return false;
@@ -107,7 +108,7 @@ inline bool pollStorageHotSwap() {
 
 template<typename ParamT, typename PartT>
 inline void saveStateToNvs(ParamT *matrix, int paramCount, PartT *parts, float *partRam = nullptr, uint8_t *seqData = nullptr, size_t seqBytes = 0, uint8_t *songData = nullptr, size_t songBytes = 0) {
-    if (usingPhysicalSD && activeStorageFS) {
+    if (false && usingPhysicalSD && activeStorageFS) {
         size_t ramBytes = partRam ? (16 * paramCount * sizeof(float)) : 0;
         size_t sBytes = (seqData && seqBytes > 0) ? seqBytes : 0;
         size_t sgBytes = (songData && songBytes > 0) ? songBytes : 0;
@@ -131,25 +132,26 @@ inline void saveStateToNvs(ParamT *matrix, int paramCount, PartT *parts, float *
                 (pt + i)->level = (parts + i)->level;
             }
             if (partRam) memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart), partRam, ramBytes);
-    if (sBytes > 0) memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes, seqData, sBytes);
-    if (sgBytes > 0) memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes + sBytes, songData, sgBytes);
-    memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes + sBytes + sgBytes, synthPatchNames, nameBytes);
-    if (sBytes > 0) memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes, seqData, sBytes);
+            if (sBytes > 0) memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes, seqData, sBytes);
             if (sgBytes > 0) memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes + sBytes, songData, sgBytes);
             memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes + sBytes + sgBytes, synthPatchNames, nameBytes);
-    if (sgBytes > 0) memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes + sBytes, songData, sgBytes);
-    if (sBytes > 0) memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes, seqData, sBytes);
-            if (sgBytes > 0) memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes + sBytes, songData, sgBytes);
-            if (sBytes > 0) memcpy(buf + sizeof(magic) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart) + ramBytes, seqData, sBytes);
+            if (SD.cardType() == CARD_NONE) { SD.end(); activeStorageFS = &SPIFFS; usingPhysicalSD = false; }
+            ensureStorageDirs();
             if (activeStorageFS->exists("/AMY/autosave.bin")) activeStorageFS->remove("/AMY/autosave.bin");
             File f = activeStorageFS->open("/AMY/autosave.bin", FILE_WRITE);
-            if (f) { size_t w = f.write(buf, totalBytes); f.close(); if (w != totalBytes) { SD.end(); activeStorageFS = &SPIFFS; usingPhysicalSD = false; } }
+            if (f) {
+                size_t w = 0; uint8_t chunk[512];
+                while (w < totalBytes) { size_t n = min((size_t)512, totalBytes - w); memcpy(chunk, buf + w, n); size_t gotW = f.write(chunk, n); if (gotW != n) break; w += gotW; }
+                f.close();
+                if (w != totalBytes) { SD.end(); activeStorageFS = &SPIFFS; usingPhysicalSD = false; }
+            }
             free(buf);
             storageDirty = false;
             Serial.println("[Storage] Auto-sparade till SD (/AMY/autosave.bin)");
             return;
         }
     }
+    if (ESP.getMaxAllocHeap() < 4096) { storageDirty = false; return; }
     if (!synthPrefs.begin("amy_synth", false)) return;
     synthPrefs.putUInt("magic", 0x53594E31);
     StoredParam *pBuf = (StoredParam*)ps_malloc(paramCount * sizeof(StoredParam));
@@ -178,7 +180,7 @@ inline void saveStateToNvs(ParamT *matrix, int paramCount, PartT *parts, float *
 template<typename ParamT, typename PartT>
 inline bool loadStateFromNvs(ParamT *matrix, int paramCount, PartT *parts, float *partRam = nullptr, uint8_t *seqData = nullptr, size_t seqBytes = 0, uint8_t *songData = nullptr, size_t songBytes = 0) {
     if (activeStorageFS && activeStorageFS->exists("/AMY/seqvel.bin")) activeStorageFS->remove("/AMY/seqvel.bin");
-    if (usingPhysicalSD && activeStorageFS && activeStorageFS->exists("/AMY/autosave.bin")) {
+    if (false && usingPhysicalSD && activeStorageFS && activeStorageFS->exists("/AMY/autosave.bin")) {
         File f = activeStorageFS->open("/AMY/autosave.bin", FILE_READ);
         if (f) {
             size_t baseBytes = sizeof(uint32_t) + paramCount * sizeof(StoredParam) + 16 * sizeof(StoredPart);

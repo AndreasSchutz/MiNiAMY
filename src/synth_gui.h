@@ -800,7 +800,7 @@ inline void styleParamWidget(int idx, lv_obj_t *box, lv_obj_t *lbl) {
             snprintf(buf, 64, "%s\n%s\nCC --", dN, dV);
         }
     }
-    lv_label_set_text(lbl, buf);
+    if (strcmp(lv_label_get_text(lbl), buf) != 0) lv_label_set_text(lbl, buf);
 }
 
 inline void refreshParamBox(int idx) {
@@ -903,6 +903,7 @@ inline void applyParameterValue(int idx, float newVal) {
         else if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].internalId == 88) seqMaxSteps = constrain((int)paramMatrix[i].currentVal, 1, SEQ_STEPS);
     }
     refreshSeqGridUI();
+    amyEnqueuePartConfig((uint8_t)activePartIdx, sp.engine, sp.voices, sp.patchOrNote, sp.level);
     loadPartIntoMatrix(activePartIdx);
     int mSel = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
     if (mSel >= 0) refreshParamBox(mSel);
@@ -965,11 +966,11 @@ inline void applyParameterValue(int idx, float newVal) {
   else if (p.internalId == SYS_PARAM_PART_LVL) {
     amyEnqueuePartLevel((uint8_t)activePartIdx, synthParts[activePartIdx].level);
   }
-  else if (p.internalId >= SYS_PARAM_PART_ENGINE && p.internalId < SYS_PARAM_PART_LVL) {
+  else if (p.internalId > SYS_PARAM_PART_ENGINE && p.internalId < SYS_PARAM_PART_LVL) {
     SynthPartConfig &sp = synthParts[activePartIdx];
     amyEnqueuePartConfig((uint8_t)activePartIdx, sp.engine, sp.voices, sp.patchOrNote, sp.level);
   }
-  if (p.internalId == SYS_PARAM_PROJ_SAVE) { int sl = (int)paramMatrix[findMatrixIdxBySysId(SYS_PARAM_PROJ_SLOT)].currentVal; saveActivePartParamsToRam(), saveProjectToDisk(sl, paramMatrix, TOTAL_PARAMS, synthParts, synthParamRam, (uint8_t*)seqPatterns, sizeof(seqPatterns), seqSongChain, sizeof(seqSongChain)); } else if (p.internalId == SYS_PARAM_PROJ_LOAD) { int sl = (int)paramMatrix[findMatrixIdxBySysId(SYS_PARAM_PROJ_SLOT)].currentVal; if (loadProjectFromDisk(sl, paramMatrix, TOTAL_PARAMS, synthParts, synthParamRam, (uint8_t*)seqPatterns, sizeof(seqPatterns), seqSongChain, sizeof(seqSongChain))) { for (int k = 0; k < TOTAL_PARAMS; k++) refreshParamBox(k); loadPartIntoMatrix(activePartIdx); } } else if (p.internalId == SYS_PARAM_FACTORY_RST) { factoryResetNvs(); }
+  if (p.internalId == SYS_PARAM_PROJ_SAVE) { int sl = (int)paramMatrix[findMatrixIdxBySysId(SYS_PARAM_PROJ_SLOT)].currentVal; saveActivePartParamsToRam(), saveProjectToDisk(sl, paramMatrix, TOTAL_PARAMS, synthParts, synthParamRam, (uint8_t*)seqPatterns, sizeof(seqPatterns), seqSongChain, sizeof(seqSongChain)); } else if (p.internalId == SYS_PARAM_PROJ_LOAD) { int sl = (int)paramMatrix[findMatrixIdxBySysId(SYS_PARAM_PROJ_SLOT)].currentVal; if (loadProjectFromDisk(sl, paramMatrix, TOTAL_PARAMS, synthParts, synthParamRam, (uint8_t*)seqPatterns, sizeof(seqPatterns), seqSongChain, sizeof(seqSongChain))) { for (int k = 0; k < TOTAL_PARAMS; k++) refreshParamBox(k); loadPartIntoMatrix(activePartIdx); } }
   markStorageDirty();
   updateSystemHardware(p.internalId, p.currentVal);
 }

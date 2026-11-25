@@ -317,6 +317,7 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
 }
 
 static uint8_t g_partEngine[16] = {0};
+static uint8_t *g_activeNotes = nullptr;
 inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
     uint8_t amySynth = m.synthSlot + 1;
     if (m.type == AMY_MSG_PART_LEVEL) {
@@ -326,10 +327,14 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
         e.synth_level = g_partVol[m.synthSlot & 15];
         amy_add_event(&e);
     } else if (m.type == AMY_MSG_PART_CONFIG) {
-        *(g_partEngine + (m.synthSlot & 15)) = m.engine;
-        if (m.engine == 0 || m.voices == 0) {
-            amy_event offE = amy_default_event(); offE.synth = amySynth; offE.num_voices = 0; amy_add_event(&offE); return;
+        uint8_t sl = m.synthSlot & 15;
+        if (g_activeNotes && *(g_activeNotes + sl) > 0) {
+            amy_event ne = amy_default_event(); ne.synth = amySynth; ne.midi_note = *(g_activeNotes + sl); ne.velocity = 0.0f; amy_add_event(&ne);
+            *(g_activeNotes + sl) = 0;
         }
+        *(g_partEngine + sl) = m.engine;
+        amy_event offE = amy_default_event(); offE.synth = amySynth; offE.num_voices = 0; amy_add_event(&offE);
+        if (m.engine == 0 || m.voices == 0) return;
         g_partVol[m.synthSlot & 15] = constrain(m.val1, 0.0f, 1.5f);
         uint32_t sig = ((uint32_t)m.engine << 24) | ((uint32_t)m.voices << 16) | m.patchOrNote;
         amy_event e = amy_default_event();
@@ -405,10 +410,12 @@ inline void amyEngineTask(void *pvParameters) {
     static float seqBpm = 120.0f, seqSwing = 0.0f;
     static uint32_t nextStepMs = 0;
     static int curStep = 0;
-    static uint8_t *activeNotes = (uint8_t*)ps_calloc(16, 1);
+    if (!g_activeNotes) g_activeNotes = (uint8_t*)ps_calloc(16, 1);
+    uint8_t *activeNotes = g_activeNotes;
     AmyBridgeMsg msg;
     for (;;) {
-        while (amyCmdQueue && xQueueReceive(amyCmdQueue, &msg, 0) == pdTRUE) {
+        int msgBudget = 8;
+        while (msgBudget-- > 0 && amyCmdQueue && xQueueReceive(amyCmdQueue, &msg, 0) == pdTRUE) {
             if (msg.type == AMY_MSG_PARAM_CHANGE) {
                 if (msg.paramId == 85) seqBpm = constrain(msg.val1, 40.0f, 240.0f);
                 else if (msg.paramId == 86) seqSwing = constrain(msg.val1, 0.0f, 75.0f);
