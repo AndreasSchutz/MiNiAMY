@@ -61,16 +61,16 @@ inline void openHelpForSection(int secId, uint16_t tabIdx) {
         else if (tabIdx == 3) showContextHelp("HELP: JUNO ENV", "ADSR envelope for VCF & VCA.\nAttack, Decay, Sustain, Release shape volume & filter.\nVCA Mode switches between ENV and Gate.");
         else showContextHelp("HELP: JUNO FX", "HPF cuts low-end rumble (0-3).\nChorus activates classic stereo BBD chorus (Off, I, II, I+II).");
     } else if (secId == 1) { // DX7
-        if (tabIdx == 0) showContextHelp("HELP: DX7 ALG", "Selects FM routing (1-32) and OP6 self-feedback (0-7).\nCarriers at bottom produce audio; modulators above shape timbre.");
-        else if (tabIdx == 1) showContextHelp("HELP: DX7 OP1-3", "Sets output Level (0-99) and frequency Ratio for Operators 1-3.\n\nShortcut:\nDouble-tap any OP Level box (blue frame) to open full 16-param Operator editor!");
-        else if (tabIdx == 2) showContextHelp("HELP: DX7 OP4-6", "Sets output Level (0-99) and frequency Ratio for Operators 4-6.\n\nShortcut:\nDouble-tap any OP Level box to edit Coarse, Fine, Detune & 4-stage EG.");
-        else showContextHelp("HELP: DX7 GLOBAL", "DX Octave shifts pitch (-2..+2).\nLFO Speed, Delay, PMD & AMD control vibrato/tremolo.\n\nShortcut:\nDouble-tap Pitch EG to edit Pitch Envelope & LFO Wave.");
+        if (tabIdx == 0) showContextHelp("HELP: DX7 ALG", "Touch/drag the ALGO diagram directly to select FM routing (1-32), double-tap to reset, or long-press for MIDI Learn.\nFeedback (0-7) sets OP feedback.\nMod Balance (0-100) scales all modulator levels at once.");
+        else if (tabIdx == 1) showContextHelp("HELP: DX7 OP1-3", "Level (0-99) sets volume/mod depth.\nRatio snaps to melodic steps (0.5, 1..31).\n\nCoarse & Fine (in OP menu):\nRatio = Coarse x (1 + Fine%). Use Coarse (0.5, 1..31) for harmonic pitch and Fine (0-99%) for detune or bell/metallic tones.\n\nDouble-tap OP Level (blue frame) to open Operator editor.");
+        else if (tabIdx == 2) showContextHelp("HELP: DX7 OP4-6", "Level (0-99) & melodic Ratio (0.5, 1..31) for Operators 4-6.\n\nCoarse & Fine:\nFine adds +0% to +99% on top of Coarse (e.g. Coarse 1 + Fine 41 = 1.41). Changing Coarse keeps the same timbre across octaves.\n\nDouble-tap OP Level (blue frame) for Coarse, Fine, Detune, Fixed & 4-stage EG.");
+        else showContextHelp("HELP: DX7 GLOBAL", "DX Octave shifts pitch (-2..+2).\nLFO Speed, Delay, PMD & AMD control vibrato/tremolo.\n\nShortcut:\nDouble-tap Pitch EG to edit Pitch Envelope, LFO Wave & LFO Sync.");
     } else if (secId == 2) { // DRUMKIT
         showContextHelp("HELP: DRUMS", "9-part ROM drum kit (Drum 1-9).\nKIT: Select PCM sample (0-66).\nTUNE: Pitch speed (0.5-2.0x).\nMIX: Individual level.\nPAN: Stereo position.\nFLT: Low-pass cutoff.\n\nShortcut:\nDouble-tap the Drums tab on the left to open 3x3 Drum Pads!");
     } else if (secId == 3) { // PCM
-        showContextHelp("HELP: PCM ENGINE", "Chromatic PCM sample player.\nPLAYER: Choose sample (0-66), Tune (+/-24 st), Fine Tune, Loop, Pan & Level.\nFLT: LPF/BPF/HPF filter.\nENV: Full ADSR & velocity sensitivity.");
+        showContextHelp("HELP: PCM ENGINE", "Chromatic PCM sample player.\nPLAYER: Choose sample (0-154), Tune (+/-24 st), Fine Tune, Loop, Pan, Key Follow & Portamento.\nFLT: LPF/BPF/HPF filter.\nENV: Full ADSR & velocity sensitivity.");
     } else if (secId == 4) { // PIANO
-        showContextHelp("HELP: PIANO ENGINE", "11-oscillator additive piano.\nTONE: Brightness, Res, Key Follow & Stereo Width.\nTIMBRE: Body, Harmonic & Hammer waves + Detune.\nMIX: Fundamental, Overtones & Hammer click.\nENV: ADSR.");
+        showContextHelp("HELP: PIANO ENGINE", "Interpolated partial piano.\nTONE: Brightness, Res, Key Follow, Vel Sens/Filter & Stereo Width.\nTIMBRE: Low EQ, Mid EQ, High EQ & Fine Tune.\nMIX: Body Level, Filter Env & Key Scale.\nENV: ADSR.");
     } else if (secId == 5) { // SEQ
         if (tabIdx == 0) showContextHelp("HELP: SEQ PATTERN", "16-step sequencer (16 tracks).\nT1-T9 trigger Drum 1-9.\nT10-T16 play Synth 10-16.\nREC: Live MIDI step record while playing.\n\nShortcuts:\n- Double-tap Seq tab: PLAY/STOP\n- Long-press step (T10-T16): Set pitch\n- Long-press Seq tab: Clear Pattern or ALL");
         else if (tabIdx == 1) showContextHelp("HELP: SEQ SONG", "Chain up to 16 patterns into a song.\nDouble-tap the left Seq/Song tab while on this page to PLAY/STOP the song.\nTap any slot dropdown to choose active patterns or END.\n- Long-press Song tab: Clear SONG chain");

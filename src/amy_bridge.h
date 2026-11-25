@@ -182,10 +182,10 @@ inline void applyJunoParamToAmy(uint8_t amySynth, int paramId, float v) {
 inline void applyPianoParamToAmy(uint8_t amySynth, int paramId, float v) {
     if (paramId < 104 || paramId > 121) return;
     amy_event e = amy_default_event(); e.synth = amySynth; e.osc = 0;
-    if (paramId == 104) { e.filter_type = FILTER_LPF; *(e.filter_freq_coefs + COEF_CONST) = v; amy_add_event(&e); }
+    if (paramId == 104) { float r = constrain((v - 200.0f) / 7800.0f, 0.0f, 1.0f); e.filter_type = FILTER_LPF; *(e.filter_freq_coefs + COEF_CONST) = 200.0f * powf(40.0f, r); amy_add_event(&e); }
     else if (paramId == 105) { e.resonance = v; amy_add_event(&e); }
     else if (paramId == 106) { *(e.filter_freq_coefs + COEF_NOTE) = v; amy_add_event(&e); }
-    else if (paramId == 107) { *(e.amp_coefs + COEF_VEL) = v; amy_add_event(&e); }
+    else if (paramId == 107) { *(e.amp_coefs + COEF_EG0) = 1.0f; *(e.amp_coefs + COEF_VEL) = v; amy_add_event(&e); }
     else if (paramId == 113) { *(e.filter_freq_coefs + COEF_VEL) = v * 3.0f; amy_add_event(&e); }
     else if (paramId == 114) { *(e.pan_coefs + COEF_CONST) = 0.5f; *(e.pan_coefs + COEF_NOTE) = v * 0.35f; amy_add_event(&e); }
     else if (paramId >= 108 && paramId <= 111) {
@@ -194,13 +194,11 @@ inline void applyPianoParamToAmy(uint8_t amySynth, int paramId, float v) {
         else if (paramId == 110) { *(e.eg0_values + 1) = v; *(e.eg0_values + 2) = v; }
         else { *(e.eg0_times + 2) = (int32_t)v; *(e.eg0_values + 2) = 0.0f; }
         amy_add_event(&e);
-    } else if (paramId == 115) { e.eq_l = v; amy_add_event(&e); }
-    else if (paramId == 116) { e.eq_m = v; amy_add_event(&e); }
-    else if (paramId == 117) { e.eq_h = v; amy_add_event(&e); }
+    } else if (paramId >= 115 && paramId <= 117) { amy_event ge = amy_default_event(); ge.bus = 0; if (paramId == 115) ge.eq_l = v; else if (paramId == 116) ge.eq_m = v; else ge.eq_h = v; amy_add_event(&ge); }
     else if (paramId == 118) { e.ratio = 1.0f + (v - 0.5f) * 0.04f; amy_add_event(&e); }
-    else if (paramId == 119) { *(e.amp_coefs + COEF_CONST) = v; amy_add_event(&e); }
+    else if (paramId == 119) { amy_event se = amy_default_event(); se.synth = amySynth; se.synth_level = v * *(g_partVol + ((amySynth - 1) & 15)); amy_add_event(&se); }
     else if (paramId == 120) { *(e.filter_freq_coefs + COEF_EG0) = v * 4.0f; amy_add_event(&e); }
-    else if (paramId == 121) { *(e.amp_coefs + COEF_NOTE) = (v - 0.5f) * 0.4f; amy_add_event(&e); }
+    else if (paramId == 121) { *(e.amp_coefs + COEF_EG0) = 1.0f; *(e.amp_coefs + COEF_NOTE) = (v - 0.5f) * 0.4f; amy_add_event(&e); }
 }
 
 inline void applySamplerParamToAmy(uint8_t amySynth, int paramId, float v) {
@@ -222,7 +220,7 @@ inline void applySamplerParamToAmy(uint8_t amySynth, int paramId, float v) {
         int ft = constrain((int)v, 0, 3);
         e.filter_type = (ft == 0) ? FILTER_NONE : ((ft == 1) ? FILTER_LPF : ((ft == 2) ? FILTER_BPF : FILTER_HPF));
         amy_add_event(&e);
-    } else if (paramId == 137) { *(e.filter_freq_coefs + COEF_CONST) = v; amy_add_event(&e); }
+    } else if (paramId == 137) { float r = constrain((v - 40.0f) / 7960.0f, 0.0f, 1.0f); *(e.filter_freq_coefs + COEF_CONST) = 40.0f * powf(200.0f, r); amy_add_event(&e); }
     else if (paramId == 138) { e.resonance = v; amy_add_event(&e); }
     else if (paramId == 139) { *(e.filter_freq_coefs + COEF_NOTE) = v; amy_add_event(&e); }
     else if (paramId == 140) { *(e.filter_freq_coefs + COEF_EG0) = v * 4.0f; amy_add_event(&e); }

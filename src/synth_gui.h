@@ -95,17 +95,17 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     {TYPE_AMY, 15, "Feedback",   0.0,   7.0,    3.0,    255, MODE_DX7,    PAGE_OSC},
     {TYPE_AMY, 155,"Mod Balance",0.0,   100.0,  50.0,   255, MODE_DX7,    PAGE_OSC},
     {TYPE_AMY, 16, "OP1 Level",  0.0,   99.0,   90.0,   255, MODE_DX7,    PAGE_FILTER},
-    {TYPE_AMY, 17, "OP1 Ratio",  0.5,   31.0,   1.0,    255, MODE_DX7,    PAGE_FILTER},
+    {TYPE_AMY, 17, "OP1 Ratio",  0.5,   62.0,   1.0,    255, MODE_DX7,    PAGE_FILTER},
     {TYPE_AMY, 18, "OP2 Level",  0.0,   99.0,   75.0,   255, MODE_DX7,    PAGE_FILTER},
-    {TYPE_AMY, 19, "OP2 Ratio",  0.5,   31.0,   2.0,    255, MODE_DX7,    PAGE_FILTER},
+    {TYPE_AMY, 19, "OP2 Ratio",  0.5,   62.0,   2.0,    255, MODE_DX7,    PAGE_FILTER},
     {TYPE_AMY, 27, "OP3 Level",  0.0,   99.0,   65.0,   255, MODE_DX7,    PAGE_FILTER},
-    {TYPE_AMY, 28, "OP3 Ratio",  0.5,   31.0,   1.0,    255, MODE_DX7,    PAGE_FILTER},
+    {TYPE_AMY, 28, "OP3 Ratio",  0.5,   62.0,   1.0,    255, MODE_DX7,    PAGE_FILTER},
     {TYPE_AMY, 29, "OP4 Level",  0.0,   99.0,   85.0,   255, MODE_DX7,    PAGE_ENV},
-    {TYPE_AMY, 30, "OP4 Ratio",  0.5,   31.0,   1.0,    255, MODE_DX7,    PAGE_ENV},
+    {TYPE_AMY, 30, "OP4 Ratio",  0.5,   62.0,   1.0,    255, MODE_DX7,    PAGE_ENV},
     {TYPE_AMY, 31, "OP5 Level",  0.0,   99.0,   70.0,   255, MODE_DX7,    PAGE_ENV},
-    {TYPE_AMY, 32, "OP5 Ratio",  0.5,   31.0,   3.0,    255, MODE_DX7,    PAGE_ENV},
+    {TYPE_AMY, 32, "OP5 Ratio",  0.5,   62.0,   3.0,    255, MODE_DX7,    PAGE_ENV},
     {TYPE_AMY, 33, "OP6 Level",  0.0,   99.0,   60.0,   255, MODE_DX7,    PAGE_ENV},
-    {TYPE_AMY, 34, "OP6 Ratio",  0.5,   31.0,   4.0,    255, MODE_DX7,    PAGE_ENV},
+    {TYPE_AMY, 34, "OP6 Ratio",  0.5,   62.0,   4.0,    255, MODE_DX7,    PAGE_ENV},
     // --- DX7 GLOBAL (6 st) ---
     {TYPE_AMY, 49, "DX Octave", -2.0,   2.0,    0.0,    255, MODE_DX7,    PAGE_LFO},
     {TYPE_AMY, 50, "LFO Speed",  0.0,   99.0,   35.0,   255, MODE_DX7,    PAGE_LFO},
@@ -644,7 +644,7 @@ inline bool isSystemActionParam(const Parameter &p) {
 }
 
 inline bool isIntegerParam(const Parameter &p) {
-    if (p.belongsToPage == PAGE_DX7_OP_DETAIL) return true;
+    if (p.belongsToPage == PAGE_DX7_OP_DETAIL) return !(p.internalId == 48 || p.internalId == 148 || p.internalId == 150 || p.internalId == 151);
     if (p.pType == TYPE_SYSTEM) {
         return true;
     }
@@ -665,6 +665,7 @@ inline bool isOpMenuTrigger(const Parameter &p) {
     return (id == 16 || id == 18 || id == 27 || id == 29 || id == 31 || id == 33 || id == 54);
 }
 
+inline bool isDx7RatioParam(const Parameter &p) { if (p.pType != TYPE_AMY || p.belongsToMode != MODE_DX7) return false; int id = p.internalId; return (id == 17 || id == 19 || id == 28 || id == 30 || id == 32 || id == 34); }
 inline void formatParamDisplay(const Parameter &p, char *outName, char *outVal) {
   static const char* engNames[] = {"OFF", "JUNO", "DX7", "PCM", "DRUMS", "PIANO"};
   if (!p.name) { *outName = 0; *outVal = 0; return; }
@@ -757,6 +758,8 @@ inline void formatParamDisplay(const Parameter &p, char *outName, char *outVal) 
       snprintf(outVal, 24, "%s", (p.currentVal >= 0.5f) ? "ON" : "OFF");
       return;
     }
+    if (p.internalId >= 300 && p.internalId < 420 && ((p.internalId - 300) % 20) == 1) { int cv = constrain((int)roundf(p.currentVal), 0, 31); if (cv == 0) snprintf(outVal, 24, "0.5"); else snprintf(outVal, 24, "%d", cv); return; }
+    if (isDx7RatioParam(p)) { snprintf(outVal, 24, "%.2f", p.currentVal); return; }
   }
   if (isIntegerParam(p)) snprintf(outVal, 24, "%.0f", p.currentVal);
   else snprintf(outVal, 24, "%.1f", p.currentVal);
@@ -770,7 +773,8 @@ inline void styleParamWidget(int idx, lv_obj_t *box, lv_obj_t *lbl) {
     if (!box || !lbl) return;
     Parameter &p = paramMatrix[idx];
     char *buf = (char*)alloca(64);
-    int32_t permille = constrain((int32_t)mapValue(p.currentVal, p.minVal, p.maxVal, 0.0f, 1000.0f), 0, 1000);
+    float barMax = isDx7RatioParam(p) ? 31.0f : p.maxVal;
+    int32_t permille = constrain((int32_t)mapValue(p.currentVal, p.minVal, barMax, 0.0f, 1000.0f), 0, 1000);
     lv_bar_set_value(box, permille, LV_ANIM_OFF);
 
     if (parameterUnderLearning == idx) {
@@ -842,14 +846,15 @@ inline void applyParameterValue(int idx, float newVal) {
         int fIdx = BASE_PARAMS + op * OP_DETAIL_COUNT + 2;
         if (p.pType == TYPE_AMY && p.internalId == *(opRatIds + op)) {
             float c = (p.currentVal < 0.75f) ? 0.0f : floorf(p.currentVal);
-            float f = (p.currentVal >= 0.75f) ? roundf((p.currentVal / c - 1.0f) * 100.0f) : 0.0f;
+            float bc = (c < 0.5f) ? 0.5f : c;
+            float f = roundf((p.currentVal / bc - 1.0f) * 100.0f);
             paramMatrix[cIdx].currentVal = constrain(c, 0.0f, 31.0f);
             paramMatrix[fIdx].currentVal = constrain(f, 0.0f, 99.0f);
             if (synthParamRam) { *(synthParamRam + activePartIdx * TOTAL_PARAMS + cIdx) = paramMatrix[cIdx].currentVal; *(synthParamRam + activePartIdx * TOTAL_PARAMS + fIdx) = paramMatrix[fIdx].currentVal; }
             refreshParamBox(cIdx); refreshParamBox(fIdx);
         } else if (idx == cIdx || idx == fIdx) {
             float c = (paramMatrix[cIdx].currentVal < 0.5f) ? 0.5f : paramMatrix[cIdx].currentVal;
-            float r = constrain(c * (1.0f + paramMatrix[fIdx].currentVal * 0.01f), 0.5f, 31.0f);
+            float r = constrain(c * (1.0f + paramMatrix[fIdx].currentVal * 0.01f), 0.5f, 62.0f);
             for (int m = 0; m < BASE_PARAMS; m++) if (paramMatrix[m].pType == TYPE_AMY && paramMatrix[m].internalId == *(opRatIds + op)) {
                 paramMatrix[m].currentVal = r;
                 if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + m) = r;
@@ -1420,6 +1425,8 @@ inline void openPatchImportModal() {
                         if (code == LV_EVENT_LONG_PRESSED) { fileRowLongHandled = true; if (fn) { char *fp = (char*)alloca(56); snprintf(fp, 56, "/AMY/patches/%s", fn); openFileDeleteConfirm(fp, fn, false); } return; }
                         if (code != LV_EVENT_CLICKED || fileRowLongHandled) return;
                         if (fn && loadSinglePatchFromDisk(fn, activePartIdx, paramMatrix, TOTAL_PARAMS, synthParts, synthParamRam)) {
+                            SynthPartConfig &spImp = synthParts[activePartIdx];
+                            amyEnqueuePartConfig((uint8_t)activePartIdx, spImp.engine, spImp.voices, spImp.patchOrNote, spImp.level);
                             loadPartIntoMatrix(activePartIdx);
                             syncAllPartParamsToAmy(activePartIdx);
                             int mSel = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
@@ -1631,7 +1638,7 @@ inline void param_box_event_cb(lv_event_t *e) {
             float ratio = isVert
                 ? constrain((float)(coords.y2 - pt.y) / (float)(coords.y2 - coords.y1), 0.0f, 1.0f)
                 : constrain((float)(pt.x - coords.x1) / (float)(coords.x2 - coords.x1), 0.0f, 1.0f);
-            applyParameterValue(idx, paramMatrix[idx].minVal + ratio * (paramMatrix[idx].maxVal - paramMatrix[idx].minVal));
+            if (isDx7RatioParam(paramMatrix[idx])) { int si = (int)roundf(ratio * 31.0f); applyParameterValue(idx, (si <= 0) ? 0.5f : (float)si); } else { applyParameterValue(idx, paramMatrix[idx].minVal + ratio * (paramMatrix[idx].maxVal - paramMatrix[idx].minVal)); }
         }
     } else if (code == LV_EVENT_LONG_PRESSED && !isDraggingFader) {
         int sysId = (paramMatrix[idx].pType == TYPE_SYSTEM) ? paramMatrix[idx].internalId : -1;
@@ -1687,8 +1694,8 @@ inline void param_box_event_cb(lv_event_t *e) {
                 if (ms >= 0) applyParameterValue(ms, (float)(np + 1)); else loadPartIntoMatrix(np);
                 refreshParamBox(ti);
             } else {
-                float step = isIntegerParam(paramMatrix[ti]) ? 1.0f : ((paramMatrix[ti].maxVal - paramMatrix[ti].minVal) * 0.02f);
-                applyParameterValue(ti, paramMatrix[ti].currentVal + td * step);
+                if (isDx7RatioParam(paramMatrix[ti])) { float cur = paramMatrix[ti].currentVal; float nv = (td > 0.0f) ? ((cur < 0.99f) ? 1.0f : min(31.0f, floorf(cur) + 1.0f)) : ((cur <= 1.01f) ? 0.5f : ((cur > floorf(cur) + 0.005f) ? floorf(cur) : max(1.0f, floorf(cur) - 1.0f))); applyParameterValue(ti, nv); } else { float step = isIntegerParam(paramMatrix[ti]) ? 1.0f : ((paramMatrix[ti].maxVal - paramMatrix[ti].minVal) * 0.02f);
+                applyParameterValue(ti, paramMatrix[ti].currentVal + td * step); }
             }
         }, dblWin, nullptr);
     }

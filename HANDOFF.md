@@ -10,27 +10,30 @@
   - Crash-free auto-save to NVS Flash (`storage_mgr.h`) + manual project `.bin` and patch `.pat` export/import.
 
 ## 2. Completed in This Session
-1. **DX7 Algorithm Diagram & Combined Control (`src/dx7_algo_view.h`, `src/synth_gui.h`)**:
-   - Merged `ALGO` diagram (`252x138 px`) and `Algorithm` (`id 14`) into one full-width interactive `lv_bar` with lighter orange progress bar (`0x8C4E27`), CC mapping / MIDI Learn status text, auto-centered layout fitting all 32 algorithms, visual multi-op feedback loop lines for Algo 4 (`OP4-6 FB`) & Algo 6 (`OP5-6 FB`), and fixed Algo 20 carrier/link topology.
-2. **DX7 `Mod Balance` (`id 155`) & Clean Sine Reset**:
-   - Added `Mod Balance` (`0..100`, default `50`) next to `Feedback` on `ALG` page; scales modulator levels per-part (`[16]`) based on `dx7CarrierMask` for the active algorithm.
-   - Updated `resetCurrentSynthToDefaults()` for DX7 to initialize a clean Algorithm 1 sine wave (`OP1 = 99`, `OP2..6 = 0`, `Ratio = 1`, `Feedback = 0`, neutral envelopes).
-   - Synced `OP1..6 Ratio` <-> `Coarse`/`Fine`, added readable labels for `Fixed` (`ON/OFF`), `LFO Wave` (`TRI/SAW-/SAW+/SQR/SIN/NOISE`), and `LFO Sync` (`ON/OFF`), and made all DX7 operator state arrays per-part (`[16]`).
-3. **PCM & Piano Editor Audits (`src/amy_bridge.h`, `src/synth_gui.h`)**:
-   - **PCM (`MODE_SAMPLER`)**: Added sample name display on `Sample` (`id 130`), bidirectional sync with `Patch/Note`, per-part tune/envelope state, and fixed ADSR envelope stage mapping (`eg0` stages `0..2`).
-   - **Piano (`MODE_PIANO`, `patch 256`)**: Audited `patches.h` (`w11` = `INTERP_PARTIALS` on `osc 0`), removed destructive multi-oscillator wave overrides, set voice cost to `4`, and mapped `TIMBRE`/`MIX` parameters (`Low EQ`, `Mid EQ`, `High EQ`, `Fine Tune`, `Body Level`, `Filter Env`, `Key Scale`).
-4. **Core 0 & Core 1 Stability Fixes (`src/amy_bridge.h`, `src/storage_mgr.h`, `src/main.cpp`, `src/synth_gui.h`)**:
-   - Eliminated Core 0 `abort()` during auto-save by switching periodic auto-save to NVS Flash (avoiding FATFS/SD DMA allocation crashes) and chunking `seqvel.bin` writes via 512-byte SRAM buffers.
-   - Eliminated Core 1 `instrument_note_off` `abort()` during engine switches/resets by sending `note_off` for active sequencer notes (`g_activeNotes`) before freeing voices (`num_voices = 0`) in `AMY_MSG_PART_CONFIG`.
-   - Added duplicate-value guard in `applyParameterValue()` and label text diffing in `styleParamWidget()` to prevent LVGL heap churn and AMY event queue overflow.
+1. **DX7 `OP Ratio` Melodic Stepping & `Coarse`/`Fine` Sync (`src/synth_gui.h`)**:
+   - Added `isDx7RatioParam()` so `OP1..6 Ratio` snaps to melodic DX7 steps (`0.5, 1.0, 2.0 ... 31.0`) on both drag and left/right tap, displays `%.2f`, scales bar `0.5..31.0`, and allows full `Coarse * (1 + Fine%)` range up to `62.0`.
+   - Fixed `Coarse = 0` display (`0.5`) and eliminated `0.5` division-by-zero in bidirectional `Ratio <-> Coarse/Fine` sync.
+2. **Global FX Float Parameters Fix (`src/synth_gui.h`)**:
+   - Excluded `Echo Fdbk` (`id 48`), `Echo Tone` (`id 148`), `Rev Size` (`id 150`), and `Rev Damp` (`id 151`) from `isIntegerParam()` on `PAGE_DX7_OP_DETAIL` so they sweep smoothly instead of snapping to min/max.
+3. **Piano & PCM Fine-Tuning (`src/amy_bridge.h`)**:
+   - Fixed Piano `Low/Mid/High EQ` (`id 115..117`) to target global `bus = 0` instead of `e.synth`.
+   - Preserved `COEF_EG0 = 1.0f` when updating Piano `Vel Sens` (`id 107`) & `Key Scale` (`id 121`), and mapped `Body Level` (`id 119`) to `e.synth_level` scaled by `g_partVol`.
+   - Added logarithmic frequency scaling (`powf`) for Piano `Brightness` (`id 104`, `200..8000 Hz`) and PCM `Cutoff` (`id 137`, `40..8000 Hz`).
+4. **Help Manual Updated (`src/help_manual.h`)**:
+   - Documented interactive `ALGO` diagram touch gestures, `Mod Balance`, `OP Ratio` melodic steps, `Coarse & Fine` multiplication formula (`Ratio = Coarse x (1 + Fine%)`), `PCM` (`0-154` samples + Key Follow/Portamento), and updated `Piano` `TIMBRE`/`MIX` controls.
 
-## 3. Next Steps (Exact Order)
-1. **End-to-End Hardware Verification**:
-   - Test saving/loading full projects (`proj_01..16.bin`) and single patches (`.pat`) on SD/SPIFFS across all 5 synth engines (`Juno`, `DX7`, `PCM`, `Drums`, `Piano`) to confirm `BASE_PARAMS = 157` (`TOTAL_PARAMS = 269`) round-trips cleanly.
-2. **Piano & PCM Fine-Tuning**:
-   - Audition all 17 Piano parameters (`TONE`, `TIMBRE`, `MIX`, `ENV`) and PCM loop/filter parameters under live MIDI/sequencer playback and adjust scaling curves if needed.
-3. **Help Manual Update (`src/help_manual.h`)**:
-   - Document the combined `ALGO` touch control, `Mod Balance`, DX7 sine-wave reset, and updated Piano `TIMBRE`/`MIX` controls in the built-in context help.
+## 3. Next Steps — Hardware Verification Checklist
+1. **DX7 `Ratio` / `Coarse` / `Fine` & Help Manual**:
+   - Verify `OP1..6 Ratio` snaps cleanly (`0.5, 1, 2 ... 31`) on drag/tap and displays `%.2f`.
+   - Verify in OP Detail modal that `Coarse = 0` displays `0.5`, and `Coarse = 1` + `Fine = 41` updates `OP Ratio` to `1.41`.
+   - Long-press sub-tabs (`DX7`, `PCM`, `PIANO`) to verify the updated context help text.
+2. **Global FX Modal (`Rev Size`, `Rev Damp`, `Echo Fdbk`, `Echo Tone`)**:
+   - Open `System -> FX`, double-tap `Echo Mix` and `Rev Mix` (blue frame), and verify `Rev Size` (`0.1..0.98`) and the other float FX controls sweep smoothly without snapping to min/max.
+3. **End-to-End Storage Verification (`proj_01..16.bin` & `.pat`)**:
+   - Configure 5 active parts (`Juno`, `DX7` with `Mod Balance` & `Ratio 1.41`, `PCM`, `Drums`, `Piano`) and verify `BASE_PARAMS = 157` (`TOTAL_PARAMS = 269`) round-trips cleanly across `.pat` export/import and `proj_01.bin` save/load.
+   - *(Optional)*: Add `amyEnqueuePartConfig(...)` inside `openPatchImportModal()` in `src/synth_gui.h` so importing a `.pat` onto an `OFF` slot immediately initializes voices on Core 1.
+4. **Piano & PCM Audio Audition**:
+   - Test Piano `Low/Mid/High EQ`, `Body Level`, and logarithmic `Brightness` (`200..8000 Hz`) plus PCM `Cutoff` (`40..8000 Hz`) under live MIDI/sequencer playback.
 
 ## 4. Critical Developer Rules
 - **Terminal / Markdown Bracket Rule**: Never put literal `[` or `]` inside Python one-liners pasted into markdown code blocks (they get stripped). Always construct brackets via `chr(91)` and `chr(93)`.
