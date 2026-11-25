@@ -47,7 +47,7 @@ struct Parameter {
 #define SYS_PARAM_PATCH_FILE 16
 #define SYS_PARAM_LED_BRIGHT 17
 
-#define BASE_PARAMS 156
+#define BASE_PARAMS 157
 #define OP_DETAIL_COUNT 16
 #define PEG_DETAIL_COUNT 10
 #define FX_DETAIL_COUNT 6
@@ -93,6 +93,7 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     // --- DX7 FM ---
     {TYPE_AMY, 14, "Algorithm",  1.0,   32.0,   1.0,    255, MODE_DX7,    PAGE_OSC},
     {TYPE_AMY, 15, "Feedback",   0.0,   7.0,    3.0,    255, MODE_DX7,    PAGE_OSC},
+    {TYPE_AMY, 155,"Mod Balance",0.0,   100.0,  50.0,   255, MODE_DX7,    PAGE_OSC},
     {TYPE_AMY, 16, "OP1 Level",  0.0,   99.0,   90.0,   255, MODE_DX7,    PAGE_FILTER},
     {TYPE_AMY, 17, "OP1 Ratio",  0.5,   31.0,   1.0,    255, MODE_DX7,    PAGE_FILTER},
     {TYPE_AMY, 18, "OP2 Level",  0.0,   99.0,   75.0,   255, MODE_DX7,    PAGE_FILTER},
@@ -180,13 +181,13 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     {TYPE_AMY, 107, "Vel Sens",   0.0,   1.5,    0.9,    255, MODE_PIANO, PAGE_OSC},
     {TYPE_AMY, 113, "Vel Filter", 0.0,   1.0,    0.6,    255, MODE_PIANO, PAGE_OSC},
     {TYPE_AMY, 114, "Stereo Wd",  0.0,   1.0,    0.4,    255, MODE_PIANO, PAGE_OSC},
-    {TYPE_AMY, 115, "Body Wave",  0.0,   3.0,    0.0,    255, MODE_PIANO, PAGE_LFO},
-    {TYPE_AMY, 116, "Harm Wave",  0.0,   3.0,    0.0,    255, MODE_PIANO, PAGE_LFO},
-    {TYPE_AMY, 117, "Hamm Wave",  0.0,   3.0,    2.0,    255, MODE_PIANO, PAGE_LFO},
-    {TYPE_AMY, 118, "Detune Spr", 0.0,   1.0,    0.25,   255, MODE_PIANO, PAGE_LFO},
-    {TYPE_AMY, 119, "Fundamentl", 0.0,   1.0,    0.9,    255, MODE_PIANO, PAGE_FILTER},
-    {TYPE_AMY, 120, "Overtones",  0.0,   1.0,    0.6,    255, MODE_PIANO, PAGE_FILTER},
-    {TYPE_AMY, 121, "Hammer Clk", 0.0,   1.0,    0.45,   255, MODE_PIANO, PAGE_FILTER},
+    {TYPE_AMY, 115, "Low EQ",    -15.0,  15.0,   0.0,    255, MODE_PIANO, PAGE_LFO},
+    {TYPE_AMY, 116, "Mid EQ",    -15.0,  15.0,   0.0,    255, MODE_PIANO, PAGE_LFO},
+    {TYPE_AMY, 117, "High EQ",   -15.0,  15.0,   0.0,    255, MODE_PIANO, PAGE_LFO},
+    {TYPE_AMY, 118, "Fine Tune",  0.0,   1.0,    0.5,    255, MODE_PIANO, PAGE_LFO},
+    {TYPE_AMY, 119, "Body Level", 0.0,   1.0,    0.9,    255, MODE_PIANO, PAGE_FILTER},
+    {TYPE_AMY, 120, "Filter Env", 0.0,   1.0,    0.4,    255, MODE_PIANO, PAGE_FILTER},
+    {TYPE_AMY, 121, "Key Scale",  0.0,   1.0,    0.5,    255, MODE_PIANO, PAGE_FILTER},
     {TYPE_AMY, 108, "Attack",     1.0,   500.0,  5.0,    255, MODE_PIANO, PAGE_ENV},
     {TYPE_AMY, 109, "Decay",      50.0,  4000.0, 1200.0, 255, MODE_PIANO, PAGE_ENV},
     {TYPE_AMY, 110, "Sustain",    0.0,   1.0,    0.3,    255, MODE_PIANO, PAGE_ENV},
@@ -459,6 +460,7 @@ inline void syncDx7GuiFromRomPatch(uint8_t patchNum) {
         }
     };
     static const int lvlIds[] = {16, 18, 27, 29, 31, 33}, ratIds[] = {17, 19, 28, 30, 32, 34};
+    setD(155, 50.0f);
     int curOsc = -1; const char *q = cmd;
     while (*q) {
         if (*q == 'v') {
@@ -531,7 +533,7 @@ inline int getOscCostPerVoice(uint8_t eng) {
     if (eng == ENG_DX7) return 6;
     if (eng == ENG_SAMPLER) return 1;
     if (eng == ENG_DRUMS) return 1;
-    if (eng == ENG_PIANO) return 11;
+    if (eng == ENG_PIANO) return 4;
     return 0;
 }
 
@@ -648,9 +650,9 @@ inline bool isIntegerParam(const Parameter &p) {
     }
     int id = p.internalId;
     return (id == 0 || id == 1 || id == 2 || id == 3 || id == 4 || id == 5 || id == 6 || id == 7 || id == 8 || id == 9 || id == 10 || id == 11 || id == 12 ||
-            id == 13 || id == 14 || id == 15 || id == 16 || id == 18 || id == 20 || (id >= 60 && id <= 64) || (id >= 89 && id <= 91) || (id >= 101 && id <= 103) || (id >= 78 && id <= 88) || id == 26 ||
+            id == 13 || id == 14 || id == 15 || id == 155 || id == 16 || id == 18 || id == 20 || (id >= 60 && id <= 64) || (id >= 89 && id <= 91) || (id >= 101 && id <= 103) || (id >= 78 && id <= 88) || id == 26 ||
             id == 27 || id == 29 || id == 31 || id == 33 || id == 35 || id == 36 || id == 37 || id == 38 || id == 39 ||
-            id == 40 || id == 41 || id == 42 || id == 43 || id == 112 || (id >= 115 && id <= 117) || (id >= 130 && id <= 133) || id == 136 || id == 137 || id == 141 || id == 142 || id == 144 || id == 146 || id == 147 || id == 153 || id == 154 || id == 44 || id == 45 || id == 47 || id == 152 || (id >= 49 && id <= 54) || id == 104 || id == 108 || id == 109 || id == 111);
+            id == 40 || id == 41 || id == 42 || id == 43 || id == 112 || (id >= 130 && id <= 133) || id == 136 || id == 137 || id == 141 || id == 142 || id == 144 || id == 146 || id == 147 || id == 153 || id == 154 || id == 44 || id == 45 || id == 47 || id == 152 || (id >= 49 && id <= 54) || id == 104 || id == 108 || id == 109 || id == 111);
 }
 
 inline bool isFxModalTrigger(const Parameter &p) {
@@ -728,15 +730,7 @@ inline void formatParamDisplay(const Parameter &p, char *outName, char *outVal) 
     snprintf(outVal, 24, "%s", lfoW[constrain((int)p.currentVal, 0, 4)]);
     return;
   }
-  if (p.pType == TYPE_AMY && (p.internalId == 115 || p.internalId == 116)) {
-    static const char* pW[] = {"SIN", "TRI", "SAW", "SQR"};
-    snprintf(outVal, 24, "%s", pW[constrain((int)p.currentVal, 0, 3)]);
-    return;
-  } else if (p.pType == TYPE_AMY && p.internalId == 117) {
-    static const char* hW[] = {"TRI", "PULSE", "NOISE", "SINE"};
-    snprintf(outVal, 24, "%s", hW[constrain((int)p.currentVal, 0, 3)]);
-    return;
-  }
+
   if (p.pType == TYPE_AMY && p.internalId == 147) { if (fileFeedbackId == 147 && millis() < fileFeedbackUntil) snprintf(outVal, 24, "%s", fileFeedbackTxt); else snprintf(outVal, 24, "P%d", constrain((int)p.currentVal, 1, 16)); return; }
   if (p.pType == TYPE_AMY && (p.internalId == 133 || p.internalId == 153)) {
     snprintf(outVal, 24, "%s", (p.currentVal >= 0.5f) ? "ON" : "OFF");
@@ -746,18 +740,33 @@ inline void formatParamDisplay(const Parameter &p, char *outName, char *outVal) 
     snprintf(outVal, 24, "%s", fltT[constrain((int)p.currentVal, 0, 3)]);
     return;
   }
-  if (p.belongsToMode == MODE_DRUMS && p.belongsToPage == PAGE_OSC) {
+  if ((p.belongsToMode == MODE_DRUMS && p.belongsToPage == PAGE_OSC) || (p.pType == TYPE_AMY && p.internalId == 130)) {
     uint8_t pcmIdx = (uint8_t)constrain((int)p.currentVal, 0, 154);
     snprintf(outName, 24, "%s (%u)", p.name, pcmIdx);
     const char *pName = getEnginePatchName(ENG_SAMPLER, pcmIdx);
     snprintf(outVal, 24, "%s", pName ? pName : "-");
     return;
   }
+  if (p.pType == TYPE_AMY && p.belongsToMode == MODE_DX7) {
+    if (p.internalId == 428) {
+      static const char* dxW[6] = {"TRI", "SAW-", "SAW+", "SQR", "SIN", "NOISE"};
+      snprintf(outVal, 24, "%s", *(dxW + constrain((int)p.currentVal, 0, 5)));
+      return;
+    }
+    if (p.internalId == 429 || (p.internalId >= 300 && p.internalId < 420 && ((p.internalId - 300) % 20) == 4)) {
+      snprintf(outVal, 24, "%s", (p.currentVal >= 0.5f) ? "ON" : "OFF");
+      return;
+    }
+  }
   if (isIntegerParam(p)) snprintf(outVal, 24, "%.0f", p.currentVal);
   else snprintf(outVal, 24, "%.1f", p.currentVal);
 }
 
 inline void styleParamWidget(int idx, lv_obj_t *box, lv_obj_t *lbl) {
+    if (idx >= 0 && idx < TOTAL_PARAMS && paramMatrix[idx].pType == TYPE_AMY && paramMatrix[idx].belongsToMode == MODE_DX7 && paramMatrix[idx].internalId == 14) {
+        updateDx7AlgoDiagram((int)paramMatrix[idx].currentVal, paramMatrix[idx].mappedCC, parameterUnderLearning == idx);
+        return;
+    }
     if (!box || !lbl) return;
     Parameter &p = paramMatrix[idx];
     char *buf = (char*)alloca(64);
@@ -821,9 +830,33 @@ inline void refreshParamBox(int idx) {
 inline void applyParameterValue(int idx, float newVal) {
     if (idx < 0 || idx >= TOTAL_PARAMS) return;
     Parameter &p = paramMatrix[idx];
-    p.currentVal = constrain(newVal, p.minVal, p.maxVal);
-    if (isIntegerParam(p)) p.currentVal = roundf(p.currentVal);
+    float clamped = constrain(newVal, p.minVal, p.maxVal);
+    if (isIntegerParam(p)) clamped = roundf(clamped);
+    if (p.pType == TYPE_AMY && !isSystemActionParam(p) && fabsf(clamped - p.currentVal) < 0.0001f) return;
+    p.currentVal = clamped;
     if (p.pType == TYPE_AMY && p.internalId == 14) updateDx7AlgoDiagram((int)p.currentVal);
+    // Synka OPx Ratio <-> Coarse/Fine
+    static const int opRatIds[6] = {17, 19, 28, 30, 32, 34};
+    for (int op = 0; op < 6; op++) {
+        int cIdx = BASE_PARAMS + op * OP_DETAIL_COUNT + 1;
+        int fIdx = BASE_PARAMS + op * OP_DETAIL_COUNT + 2;
+        if (p.pType == TYPE_AMY && p.internalId == *(opRatIds + op)) {
+            float c = (p.currentVal < 0.75f) ? 0.0f : floorf(p.currentVal);
+            float f = (p.currentVal >= 0.75f) ? roundf((p.currentVal / c - 1.0f) * 100.0f) : 0.0f;
+            paramMatrix[cIdx].currentVal = constrain(c, 0.0f, 31.0f);
+            paramMatrix[fIdx].currentVal = constrain(f, 0.0f, 99.0f);
+            if (synthParamRam) { *(synthParamRam + activePartIdx * TOTAL_PARAMS + cIdx) = paramMatrix[cIdx].currentVal; *(synthParamRam + activePartIdx * TOTAL_PARAMS + fIdx) = paramMatrix[fIdx].currentVal; }
+            refreshParamBox(cIdx); refreshParamBox(fIdx);
+        } else if (idx == cIdx || idx == fIdx) {
+            float c = (paramMatrix[cIdx].currentVal < 0.5f) ? 0.5f : paramMatrix[cIdx].currentVal;
+            float r = constrain(c * (1.0f + paramMatrix[fIdx].currentVal * 0.01f), 0.5f, 31.0f);
+            for (int m = 0; m < BASE_PARAMS; m++) if (paramMatrix[m].pType == TYPE_AMY && paramMatrix[m].internalId == *(opRatIds + op)) {
+                paramMatrix[m].currentVal = r;
+                if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + m) = r;
+                refreshParamBox(m);
+            }
+        }
+    }
     // Synka OPx Level mellan huvudruta och detalj-Level
     int opLvlIds[6] = {16, 18, 27, 29, 31, 33};
     for (int op = 0; op < 6; op++) {
@@ -892,12 +925,35 @@ inline void applyParameterValue(int idx, float newVal) {
     else if (eng == ENG_DRUMS) v = constrain(v, 0, 127);
     else v = 0;
     if ((float)v != p.currentVal) { p.currentVal = (float)v; refreshParamBox(idx); }
+    bool patchChanged = (synthParts[activePartIdx].patchOrNote != (uint8_t)v);
     synthParts[activePartIdx].patchOrNote = (uint8_t)v;
     if (eng == ENG_JUNO) { syncJunoGuiFromRomPatch((uint8_t)v); }
     else if (eng == ENG_DX7) { syncDx7GuiFromRomPatch((uint8_t)v); }
+    else if (eng == ENG_SAMPLER) {
+        for (int i = 0; i < BASE_PARAMS; i++) if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].internalId == 130) {
+            paramMatrix[i].currentVal = (float)v;
+            if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + i) = (float)v;
+            refreshParamBox(i); break;
+        }
+    }
     memset(((char*)synthPatchNames) + activePartIdx * 16, 0, 16);
     int mSel = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
     if (mSel >= 0) refreshParamBox(mSel);
+    if (patchChanged) {
+        SynthPartConfig &sp = synthParts[activePartIdx];
+        amyEnqueuePartConfig((uint8_t)activePartIdx, sp.engine, sp.voices, sp.patchOrNote, sp.level);
+        if (eng == ENG_DX7) {
+            static const int syncIds[9] = {14, 15, 155, 16, 18, 27, 29, 31, 33};
+            for (int k = 0; k < 9; k++) {
+                for (int i = 0; i < BASE_PARAMS; i++) {
+                    if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].belongsToMode == MODE_DX7 && paramMatrix[i].internalId == *(syncIds + k)) {
+                        amyEnqueueParam((uint8_t)activePartIdx, *(syncIds + k), paramMatrix[i].currentVal);
+                        break;
+                    }
+                }
+            }
+        }
+    }
   }
   else if (p.internalId == SYS_PARAM_PART_LVL) synthParts[activePartIdx].level = p.currentVal / 10.0f;
   else if (p.internalId == SYS_PARAM_PATCH_FILE) {
@@ -945,6 +1001,12 @@ inline void applyParameterValue(int idx, float newVal) {
             }
             rebuildSongDropdownOptions(); refreshSeqSongUI(); refreshSeqGridUI();
         }
+      }
+      if (p.internalId == 130 && synthParts[activePartIdx].engine == ENG_SAMPLER) {
+        synthParts[activePartIdx].patchOrNote = (uint8_t)p.currentVal;
+        int mp = findMatrixIdxBySysId(SYS_PARAM_PART_PATCH), ms = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
+        if (mp >= 0) { paramMatrix[mp].currentVal = p.currentVal; refreshParamBox(mp); }
+        if (ms >= 0) refreshParamBox(ms);
       }
       amyEnqueueParam((uint8_t)activePartIdx, p.internalId, p.currentVal);
       markStorageDirty();
@@ -1018,8 +1080,52 @@ inline void resetCurrentSynthToDefaults() {
             }
         }
         syncAllPartParamsToAmy(activePartIdx);
-    }
-    else syncAllPartParamsToAmy(activePartIdx);
+    } else if (eng == ENG_DX7) {
+        auto setDxInit = [&](int pid, float val) {
+            for (int i = 0; i < TOTAL_PARAMS; i++) {
+                Parameter *pp = paramMatrix + i;
+                if (pp->pType == TYPE_AMY && pp->belongsToMode == MODE_DX7 && pp->internalId == pid) {
+                    pp->currentVal = val;
+                    if (synthParamRam) *(synthParamRam + activePartIdx * TOTAL_PARAMS + i) = val;
+                    refreshParamBox(i);
+                    break;
+                }
+            }
+        };
+        setDxInit(14, 1.0f);
+        setDxInit(15, 0.0f);
+        setDxInit(155, 50.0f);
+        setDxInit(49, 0.0f);
+        setDxInit(50, 0.0f);
+        setDxInit(51, 0.0f);
+        setDxInit(52, 0.0f);
+        setDxInit(53, 0.0f);
+        setDxInit(54, 0.0f);
+        static const int mLvl[6] = {16, 18, 27, 29, 31, 33};
+        static const int mRat[6] = {17, 19, 28, 30, 32, 34};
+        for (int op = 0; op < 6; op++) {
+            float lvl = (op == 0) ? 99.0f : 0.0f;
+            int ob = 300 + op * 20;
+            setDxInit(*(mLvl + op), lvl);
+            setDxInit(*(mRat + op), 1.0f);
+            setDxInit(ob + 0, lvl);
+            setDxInit(ob + 1, 1.0f);
+            setDxInit(ob + 2, 0.0f);
+            setDxInit(ob + 3, 0.0f);
+            setDxInit(ob + 4, 0.0f);
+            setDxInit(ob + 5, 0.0f);
+            for (int r = 0; r < 4; r++) setDxInit(ob + 6 + r, 99.0f);
+            for (int l = 0; l < 3; l++) setDxInit(ob + 10 + l, 99.0f);
+            setDxInit(ob + 13, 0.0f);
+            setDxInit(ob + 14, 0.0f);
+            setDxInit(ob + 15, 0.0f);
+        }
+        for (int r = 0; r < 4; r++) setDxInit(420 + r, 99.0f);
+        for (int l = 0; l < 4; l++) setDxInit(424 + l, 50.0f);
+        setDxInit(428, 0.0f);
+        setDxInit(429, 1.0f);
+        syncAllPartParamsToAmy(activePartIdx);
+    } else syncAllPartParamsToAmy(activePartIdx);
     int mSel = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
     if (mSel >= 0) refreshParamBox(mSel);
     markStorageDirty();
@@ -1808,6 +1914,7 @@ inline void populateSubPage(lv_obj_t *parent, MainMode mode, SubPage page) {
 
     for (int i = 0; i < BASE_PARAMS; i++) {
         if (paramMatrix[i].name != nullptr && paramMatrix[i].belongsToMode == mode && paramMatrix[i].belongsToPage == page) {
+            if (mode == MODE_DX7 && page == PAGE_OSC && paramMatrix[i].internalId == 14) continue;
             paramBoxes[i] = createParamBarWidget(parent, i, &paramLabels[i]);
             if (mode == MODE_DRUMS || (mode == MODE_JUNO && page == PAGE_OSC)) lv_obj_set_size(paramBoxes[i], 82, 67);
             if (mode == MODE_JUNO && page == PAGE_ENV && paramMatrix[i].internalId >= 9 && paramMatrix[i].internalId <= 12) lv_obj_set_size(paramBoxes[i], 61, 136);
@@ -1971,8 +2078,14 @@ inline void create_synth_gui() {
     lv_obj_t *dx7_tv = createStyledSubTabview(tab_engine, 1);
     g_dx7Tv = dx7_tv;
     lv_obj_t *dx7_alg_page = lv_tabview_add_tab(dx7_tv, "ALG");
+    int dx7AlgIdx = -1;
+    for (int i = 0; i < BASE_PARAMS; i++) {
+        if (paramMatrix[i].pType == TYPE_AMY && paramMatrix[i].belongsToMode == MODE_DX7 && paramMatrix[i].internalId == 14) { dx7AlgIdx = i; break; }
+    }
+    paramBoxes[dx7AlgIdx] = createDx7AlgoWidget(dx7_alg_page, param_box_event_cb, dx7AlgIdx);
+    paramBars[dx7AlgIdx] = paramBoxes[dx7AlgIdx];
     populateSubPage(dx7_alg_page, MODE_DX7, PAGE_OSC);
-    createDx7AlgoWidget(dx7_alg_page);
+    refreshParamBox(dx7AlgIdx);
     populateSubPage(lv_tabview_add_tab(dx7_tv, "OP1-3"),  MODE_DX7, PAGE_FILTER);
     populateSubPage(lv_tabview_add_tab(dx7_tv, "OP4-6"),  MODE_DX7, PAGE_ENV);
     populateSubPage(lv_tabview_add_tab(dx7_tv, "GLOBAL"), MODE_DX7, PAGE_LFO);

@@ -180,52 +180,44 @@ inline void applyJunoParamToAmy(uint8_t amySynth, int paramId, float v) {
 }
 
 inline void applyPianoParamToAmy(uint8_t amySynth, int paramId, float v) {
-    amy_event e = amy_default_event(); e.synth = amySynth;
+    if (paramId < 104 || paramId > 121) return;
+    amy_event e = amy_default_event(); e.synth = amySynth; e.osc = 0;
     if (paramId == 104) { e.filter_type = FILTER_LPF; *(e.filter_freq_coefs + COEF_CONST) = v; amy_add_event(&e); }
     else if (paramId == 105) { e.resonance = v; amy_add_event(&e); }
     else if (paramId == 106) { *(e.filter_freq_coefs + COEF_NOTE) = v; amy_add_event(&e); }
     else if (paramId == 107) { *(e.amp_coefs + COEF_VEL) = v; amy_add_event(&e); }
     else if (paramId == 113) { *(e.filter_freq_coefs + COEF_VEL) = v * 3.0f; amy_add_event(&e); }
-    else if (paramId == 114) {
-        for (uint16_t o = 0; o < 11; o++) {
-            amy_event eo = amy_default_event(); eo.synth = amySynth; eo.osc = o;
-            float side = (o % 2 == 0) ? -1.0f : 1.0f;
-            *(eo.pan_coefs + COEF_CONST) = constrain(0.5f + side * v * 0.45f * ((float)o / 10.0f), 0.0f, 1.0f);
-            amy_add_event(&eo);
-        }
-    } else if (paramId >= 108 && paramId <= 111) {
+    else if (paramId == 114) { *(e.pan_coefs + COEF_CONST) = 0.5f; *(e.pan_coefs + COEF_NOTE) = v * 0.35f; amy_add_event(&e); }
+    else if (paramId >= 108 && paramId <= 111) {
         if (paramId == 108) { *(e.eg0_times + 0) = (int32_t)v; *(e.eg0_values + 0) = 1.0f; }
         else if (paramId == 109) { *(e.eg0_times + 1) = (int32_t)v; }
         else if (paramId == 110) { *(e.eg0_values + 1) = v; *(e.eg0_values + 2) = v; }
         else { *(e.eg0_times + 2) = (int32_t)v; *(e.eg0_values + 2) = 0.0f; }
         amy_add_event(&e);
-    } else if (paramId >= 115 && paramId <= 117) {
-        int wi = constrain((int)v, 0, 3);
-        uint16_t o0 = (paramId == 115) ? 0 : ((paramId == 116) ? 4 : 9);
-        uint16_t o1 = (paramId == 115) ? 3 : ((paramId == 116) ? 8 : 10);
-        uint8_t w = (wi == 0) ? SINE : ((wi == 1) ? TRIANGLE : ((wi == 2) ? SAW_UP : PULSE));
-        if (paramId == 117) w = (wi == 0) ? TRIANGLE : ((wi == 1) ? PULSE : ((wi == 2) ? NOISE : SINE));
-        for (uint16_t o = o0; o <= o1; o++) { amy_event eo = amy_default_event(); eo.synth = amySynth; eo.osc = o; eo.wave = w; amy_add_event(&eo); }
-    } else if (paramId == 118) {
-        for (uint16_t o = 1; o < 11; o++) { amy_event eo = amy_default_event(); eo.synth = amySynth; eo.osc = o; eo.ratio = (float)(o + 1) * (1.0f + ((o % 2 == 0) ? 1.0f : -1.0f) * v * 0.008f * (float)o); amy_add_event(&eo); }
-    } else if (paramId == 119) { e.osc = 0; *(e.amp_coefs + COEF_CONST) = v; amy_add_event(&e); }
-    else if (paramId == 120) { for (uint16_t o = 1; o <= 6; o++) { amy_event eo = amy_default_event(); eo.synth = amySynth; eo.osc = o; *(eo.amp_coefs + COEF_CONST) = (v * 0.5f) / (float)o; amy_add_event(&eo); } }
-    else if (paramId == 121) { for (uint16_t o = 7; o <= 10; o++) { amy_event eo = amy_default_event(); eo.synth = amySynth; eo.osc = o; *(eo.amp_coefs + COEF_CONST) = v * 0.25f; amy_add_event(&eo); } }
+    } else if (paramId == 115) { e.eq_l = v; amy_add_event(&e); }
+    else if (paramId == 116) { e.eq_m = v; amy_add_event(&e); }
+    else if (paramId == 117) { e.eq_h = v; amy_add_event(&e); }
+    else if (paramId == 118) { e.ratio = 1.0f + (v - 0.5f) * 0.04f; amy_add_event(&e); }
+    else if (paramId == 119) { *(e.amp_coefs + COEF_CONST) = v; amy_add_event(&e); }
+    else if (paramId == 120) { *(e.filter_freq_coefs + COEF_EG0) = v * 4.0f; amy_add_event(&e); }
+    else if (paramId == 121) { *(e.amp_coefs + COEF_NOTE) = (v - 0.5f) * 0.4f; amy_add_event(&e); }
 }
 
 inline void applySamplerParamToAmy(uint8_t amySynth, int paramId, float v) {
     if ((paramId < 130 || paramId > 145) && paramId != 153 && paramId != 154) return;
-    static float sTune = 0.0f;
-    static float sFine = 0.0f;
+    uint8_t slot = (amySynth - 1) & 15;
+    static float sTune[16] = {0}, sFine[16] = {0};
+    static float sAtk[16], sDec[16], sSus[16], sRel[16];
+    static bool sInit = false;
+    if (!sInit) { sInit = true; for (int i = 0; i < 16; i++) { *(sAtk + i) = 5.0f; *(sDec + i) = 500.0f; *(sSus + i) = 0.8f; *(sRel + i) = 250.0f; } }
     amy_event e = amy_default_event(); e.synth = amySynth;
-    if (paramId == 130) { e.wave = PCM; int16_t pv = (int16_t)v; e.wave = PCM; e.preset = (pv >= 19) ? (int16_t)(256 + (pv - 19)) : pv; amy_add_event(&e); }
+    if (paramId == 130) { e.wave = PCM; int16_t pv = (int16_t)v; e.preset = (pv >= 19) ? (int16_t)(256 + (pv - 19)) : pv; amy_add_event(&e); }
     else if (paramId == 131 || paramId == 132) {
-        if (paramId == 131) sTune = v; else sFine = v;
-        e.ratio = powf(2.0f, (sTune + sFine * 0.01f) / 12.0f);
+        if (paramId == 131) *(sTune + slot) = v; else *(sFine + slot) = v;
+        e.ratio = powf(2.0f, (*(sTune + slot) + *(sFine + slot) * 0.01f) / 12.0f);
         amy_add_event(&e);
     } else if (paramId == 133) { e.feedback = (v >= 0.5f) ? 1.0f : 0.0f; amy_add_event(&e); }
     else if (paramId == 134) { *(e.pan_coefs + COEF_CONST) = v; amy_add_event(&e); }
-    else if (paramId == 135) { *(e.amp_coefs + COEF_CONST) = v; amy_add_event(&e); }
     else if (paramId == 136) {
         int ft = constrain((int)v, 0, 3);
         e.filter_type = (ft == 0) ? FILTER_NONE : ((ft == 1) ? FILTER_LPF : ((ft == 2) ? FILTER_BPF : FILTER_HPF));
@@ -234,40 +226,62 @@ inline void applySamplerParamToAmy(uint8_t amySynth, int paramId, float v) {
     else if (paramId == 138) { e.resonance = v; amy_add_event(&e); }
     else if (paramId == 139) { *(e.filter_freq_coefs + COEF_NOTE) = v; amy_add_event(&e); }
     else if (paramId == 140) { *(e.filter_freq_coefs + COEF_EG0) = v * 4.0f; amy_add_event(&e); }
-    else if (paramId == 141) { *(e.eg0_times + 0) = (int32_t)v; *(e.eg0_values + 0) = 1.0f; amy_add_event(&e); }
-    else if (paramId == 142) { *(e.eg0_times + 1) = (int32_t)v; amy_add_event(&e); }
-    else if (paramId == 143) { *(e.eg0_values + 1) = v; *(e.eg0_values + 2) = v; amy_add_event(&e); }
-    else if (paramId == 144) { *(e.eg0_times + 3) = (int32_t)v; *(e.eg0_values + 3) = 0.0f; amy_add_event(&e); }
-    else if (paramId == 145) { *(e.amp_coefs + COEF_VEL) = v; amy_add_event(&e); }
+    else if (paramId >= 141 && paramId <= 144) {
+        if (paramId == 141) *(sAtk + slot) = v;
+        else if (paramId == 142) *(sDec + slot) = v;
+        else if (paramId == 143) *(sSus + slot) = v;
+        else *(sRel + slot) = v;
+        *(e.eg0_times + 0) = (int32_t)*(sAtk + slot); *(e.eg0_values + 0) = 1.0f;
+        *(e.eg0_times + 1) = (int32_t)*(sDec + slot); *(e.eg0_values + 1) = *(sSus + slot);
+        *(e.eg0_times + 2) = (int32_t)*(sRel + slot); *(e.eg0_values + 2) = 0.0f;
+        amy_add_event(&e);
+    } else if (paramId == 145) { *(e.amp_coefs + COEF_VEL) = v; amy_add_event(&e); }
     else if (paramId == 153) { *(e.freq_coefs + COEF_NOTE) = (v >= 0.5f) ? 1.0f : 0.0f; amy_add_event(&e); }
     else if (paramId == 154) { float r = constrain(v / 10.0f, 0.0f, 1.0f); e.portamento_ms = (uint16_t)(r * r * 1000.0f); amy_add_event(&e); }
 }
 
 inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
     static const int lvlIds[] = {16,18,27,29,31,33}, ratIds[] = {17,19,28,30,32,34};
-    static float opCoarse[] = {1,2,1,1,3,4}, opFine[] = {0,0,0,0,0,0}, opDet[] = {0,0,0,0,0,0}, opAms[] = {0,0,0,0,0,0};
-    static float opEgR[6][4] = {{95,70,40,50},{95,70,40,50},{95,70,40,50},{95,70,40,50},{95,70,40,50},{95,70,40,50}};
-    static float opEgL[6][4] = {{99,80,60,0},{99,80,60,0},{99,80,60,0},{99,80,60,0},{99,80,60,0},{99,80,60,0}};
-    static bool opFix[] = {false,false,false,false,false,false}; static float gAmd = 0.0f;
+    static float opCoarse[16][6], opFine[16][6], opDet[16][6], opAms[16][6];
+    static float opEgR[16][6][4], opEgL[16][6][4];
+    static bool opFix[16][6]; static float gAmd[16] = {0};
+    uint8_t slot = (amySynth - 1) & 15;
+    static const uint8_t cMask[32] = {0x05,0x05,0x09,0x09,0x15,0x15,0x05,0x05,0x05,0x09,0x09,0x05,0x05,0x05,0x05,0x01,0x01,0x01,0x19,0x1B,0x1B,0x1D,0x1B,0x1F,0x1F,0x0B,0x0B,0x0B,0x17,0x0F,0x1F,0x3F};
+    static float opBase[16][6], curAlg[16], modBal[16];
+    static bool stInit = false;
+    if (!stInit) { stInit = true; static const float dR[4] = {95,70,40,50}, dL[4] = {99,80,60,0}; for (int i = 0; i < 16; i++) { *(curAlg + i) = 1.0f; *(modBal + i) = 50.0f; *(*(opBase + i) + 0) = 99.0f; for (int o = 0; o < 6; o++) { *(*(opCoarse + i) + o) = 1.0f; for (int k = 0; k < 4; k++) { *(*(*(opEgR + i) + o) + k) = *(dR + k); *(*(*(opEgL + i) + o) + k) = *(dL + k); } } } }
     auto sendOpEnv = [&](uint16_t op) {
         amy_event e = amy_default_event(); e.synth = amySynth; e.osc = (uint16_t)(7 - op);
-        float l4 = (opEgL[op][3] < 1.0f) ? 0.000188f : (opEgL[op][3] / 99.0f);
+        float l4 = (opEgL[slot][op][3] < 1.0f) ? 0.000188f : (opEgL[slot][op][3] / 99.0f);
         *(e.eg0_times + 0) = 0; *(e.eg0_values + 0) = l4;
         for (int st = 0; st < 4; st++) {
-            float nr = constrain((99.0f - opEgR[op][st]) / 99.0f, 0.0f, 1.0f);
+            float nr = constrain((99.0f - opEgR[slot][op][st]) / 99.0f, 0.0f, 1.0f);
             *(e.eg0_times + st + 1) = (int32_t)(powf(nr, 2.2f) * 15000.0f);
-            float lv = opEgL[op][st] / 99.0f;
-            *(e.eg0_values + st + 1) = (st == 3 && opEgL[op][st] < 1.0f) ? 0.000188f : lv;
+            float lv = opEgL[slot][op][st] / 99.0f;
+            *(e.eg0_values + st + 1) = (st == 3 && opEgL[slot][op][st] < 1.0f) ? 0.000188f : lv;
         }
         amy_add_event(&e);
     };
-    auto setOpLvl = [&](uint16_t op, float lv99) {
+    auto setOpLvl = [&](uint16_t op, float raw99) {
+        *(*(opBase + slot) + op) = raw99;
+        int ai = constrain((int)*(curAlg + slot), 1, 32) - 1;
+        float lv99 = raw99, bal = *(modBal + slot);
+        if (!((*(cMask + ai) >> op) & 1)) {
+            if (bal < 50.0f) lv99 = raw99 * (bal / 50.0f);
+            else if (bal > 50.0f) lv99 = raw99 + (99.0f - raw99) * ((bal - 50.0f) / 50.0f);
+        }
         amy_event e = amy_default_event(); e.synth = amySynth; e.osc = (uint16_t)(7 - op);
         *(e.amp_coefs + COEF_CONST) = (lv99 <= 0.5f) ? 0.0001f : ((lv99 / 99.0f) * 2.0f);
         *(e.amp_coefs + COEF_EG0) = 1.0f;
-        *(e.amp_coefs + COEF_MOD0) = (gAmd / 99.0f) * (opAms[op] / 3.0f) * 0.5f;
+        *(e.amp_coefs + COEF_MOD0) = (*(gAmd + slot) / 99.0f) * (*(*(opAms + slot) + op) / 3.0f) * 0.5f;
         amy_add_event(&e);
     };
+    if (paramId == 14 || paramId == 155) {
+        if (paramId == 14) { *(curAlg + slot) = v; amy_event ea = amy_default_event(); ea.synth = amySynth; ea.algorithm = (uint8_t)v; amy_add_event(&ea); }
+        else *(modBal + slot) = constrain(v, 0.0f, 100.0f);
+        for (uint16_t op = 0; op < 6; op++) setOpLvl(op, *(*(opBase + slot) + op));
+        return;
+    }
     for (uint16_t op = 0; op < 6; op++) {
         if (paramId == lvlIds[op]) { setOpLvl(op, v); return; }
         if (paramId == ratIds[op]) { amy_event e = amy_default_event(); e.synth = amySynth; e.osc = (uint16_t)(7 - op); e.ratio = v; amy_add_event(&e); return; }
@@ -277,13 +291,13 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
         amy_event e = amy_default_event(); e.synth = amySynth; e.osc = (uint16_t)(7 - op);
         if (k == 0) { setOpLvl(op, v); return; }
         else if (k >= 1 && k <= 4) {
-            if (k == 1) opCoarse[op] = v; else if (k == 2) opFine[op] = v; else if (k == 3) opDet[op] = v; else opFix[op] = (v >= 0.5f);
-            if (opFix[op]) { e.ratio = 0.0f; *(e.freq_coefs + COEF_NOTE) = 0.0f; *(e.freq_coefs + COEF_CONST) = powf(9772.0f, (opCoarse[op] * 100.0f + opFine[op]) / 3199.0f); }
-            else { float c = (opCoarse[op] < 0.5f) ? 0.5f : opCoarse[op]; *(e.freq_coefs + COEF_NOTE) = 1.0f; *(e.freq_coefs + COEF_CONST) = 0.0f; e.ratio = c * (1.0f + opFine[op] * 0.01f) + opDet[op] * 0.0015f; }
+            if (k == 1) opCoarse[slot][op] = v; else if (k == 2) opFine[slot][op] = v; else if (k == 3) opDet[slot][op] = v; else opFix[slot][op] = (v >= 0.5f);
+            if (opFix[slot][op]) { e.ratio = 0.0f; *(e.freq_coefs + COEF_NOTE) = 0.0f; *(e.freq_coefs + COEF_CONST) = powf(9772.0f, (opCoarse[slot][op] * 100.0f + opFine[slot][op]) / 3199.0f); }
+            else { float c = (opCoarse[slot][op] < 0.5f) ? 0.5f : opCoarse[slot][op]; *(e.freq_coefs + COEF_NOTE) = 1.0f; *(e.freq_coefs + COEF_CONST) = 0.0f; e.ratio = c * (1.0f + opFine[slot][op] * 0.01f) + opDet[slot][op] * 0.0015f; }
         } else if (k == 5) { e.osc = 0; *(e.amp_coefs + COEF_VEL) = v / 7.0f; }
-        else if (k >= 6 && k <= 9) { opEgR[op][k - 6] = v; sendOpEnv(op); return; }
-        else if (k >= 10 && k <= 13) { opEgL[op][k - 10] = v; sendOpEnv(op); return; }
-        else if (k == 14) { opAms[op] = v; *(e.amp_coefs + COEF_MOD0) = (gAmd / 99.0f) * (v / 3.0f) * 0.5f; }
+        else if (k >= 6 && k <= 9) { opEgR[slot][op][k - 6] = v; sendOpEnv(op); return; }
+        else if (k >= 10 && k <= 13) { opEgL[slot][op][k - 10] = v; sendOpEnv(op); return; }
+        else if (k == 14) { opAms[slot][op] = v; *(e.amp_coefs + COEF_MOD0) = (*(gAmd + slot) / 99.0f) * (v / 3.0f) * 0.5f; }
         else if (k == 15) { *(e.amp_coefs + COEF_NOTE) = -v * 0.04f; }
         amy_add_event(&e); return;
     }
@@ -293,7 +307,7 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
         else if (paramId == 50) { e.osc = 1; *(e.freq_coefs + COEF_NOTE) = 0.0f; *(e.freq_coefs + COEF_CONST) = 0.06f * powf(600.0f, v / 99.0f); amy_add_event(&e); }
         else if (paramId == 51) { e.osc = 1; *(e.amp_coefs + COEF_CONST) = 1.0f; *(e.amp_coefs + COEF_EG0) = 1.0f; *(e.eg0_times + 0) = 0; *(e.eg0_values + 0) = 0.0f; *(e.eg0_times + 1) = (int32_t)((v / 99.0f) * (v / 99.0f) * 3000.0f); *(e.eg0_values + 1) = 1.0f; amy_add_event(&e); }
         else if (paramId == 52) { e.osc = 0; *(e.freq_coefs + COEF_MOD0) = (v / 99.0f) * 0.08f; amy_add_event(&e); }
-        else if (paramId == 53) { gAmd = v; for (uint16_t op = 0; op < 6; op++) { amy_event eo = amy_default_event(); eo.synth = amySynth; eo.osc = (uint16_t)(7 - op); *(eo.amp_coefs + COEF_MOD0) = (gAmd / 99.0f) * (opAms[op] / 3.0f) * 0.5f; amy_add_event(&eo); } }
+        else if (paramId == 53) { *(gAmd + slot) = v; for (uint16_t op = 0; op < 6; op++) { amy_event eo = amy_default_event(); eo.synth = amySynth; eo.osc = (uint16_t)(7 - op); *(eo.amp_coefs + COEF_MOD0) = (*(gAmd + slot) / 99.0f) * (opAms[slot][op] / 3.0f) * 0.5f; amy_add_event(&eo); } }
     } else if (paramId >= 420 && paramId <= 429) {
         int pk = paramId - 420; amy_event e = amy_default_event(); e.synth = amySynth;
         if (pk == 8) { static const uint8_t dw[] = {TRIANGLE, SAW_DOWN, SAW_UP, PULSE, SINE, NOISE}; e.osc = 1; e.wave = dw[constrain((int)v, 0, 5)]; amy_add_event(&e); }
@@ -312,6 +326,7 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
         e.synth_level = g_partVol[m.synthSlot & 15];
         amy_add_event(&e);
     } else if (m.type == AMY_MSG_PART_CONFIG) {
+        *(g_partEngine + (m.synthSlot & 15)) = m.engine;
         if (m.engine == 0 || m.voices == 0) {
             amy_event offE = amy_default_event(); offE.synth = amySynth; offE.num_voices = 0; amy_add_event(&offE); return;
         }
@@ -352,10 +367,11 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
     } else if (m.type == AMY_MSG_PARAM_CHANGE) {
         amy_event e = amy_default_event();
         e.synth = amySynth;
-        applyJunoParamToAmy(amySynth, m.paramId, m.val1);
-        applyPianoParamToAmy(amySynth, m.paramId, m.val1);
-        applySamplerParamToAmy(amySynth, m.paramId, m.val1);
-        applyDx7ParamToAmy(amySynth, m.paramId, m.val1);
+        uint8_t eng = *(g_partEngine + (m.synthSlot & 15));
+        if (eng == 1) applyJunoParamToAmy(amySynth, m.paramId, m.val1);
+        else if (eng == 5) applyPianoParamToAmy(amySynth, m.paramId, m.val1);
+        else if (eng == 3) applySamplerParamToAmy(amySynth, m.paramId, m.val1);
+        else if (eng == 2) applyDx7ParamToAmy(amySynth, m.paramId, m.val1);
         switch (m.paramId) {
                                                 case 40: { float r = constrain(m.val1 / 10.0f, 0.0f, 1.0f); e.portamento_ms = (uint16_t)(r * r * 1000.0f); amy_add_event(&e); break; }
                         case 14: e.algorithm = (uint8_t)m.val1; amy_add_event(&e); break;
@@ -368,11 +384,7 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
             case 150: { amy_event ge = amy_default_event(); ge.bus = 0; ge.reverb_liveness = m.val1; amy_add_event(&ge); break; }
             case 151: { amy_event ge = amy_default_event(); ge.bus = 0; ge.reverb_damping = m.val1; amy_add_event(&ge); break; }
             case 152: { amy_event ge = amy_default_event(); ge.bus = 0; ge.reverb_xover_hz = m.val1; amy_add_event(&ge); break; }
-            case 104: e.filter_type = FILTER_LPF; *(e.filter_freq_coefs + COEF_CONST) = m.val1; amy_add_event(&e); break;
-            case 105: e.resonance = m.val1; amy_add_event(&e); break;
-            case 106: *(e.filter_freq_coefs + COEF_NOTE) = m.val1; amy_add_event(&e); break;
-            case 107: *(e.amp_coefs + COEF_VEL) = m.val1; amy_add_event(&e); break;
-            case 111: *(e.eg0_times + 3) = (int32_t)m.val1; *(e.eg0_values + 3) = 0.0f; amy_add_event(&e); break;
+
             default: break;
         }
     }
