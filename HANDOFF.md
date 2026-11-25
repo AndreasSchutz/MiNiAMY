@@ -19,7 +19,10 @@
    - Fixed Piano `Low/Mid/High EQ` (`id 115..117`) to target global `bus = 0` instead of `e.synth`.
    - Preserved `COEF_EG0 = 1.0f` when updating Piano `Vel Sens` (`id 107`) & `Key Scale` (`id 121`), and mapped `Body Level` (`id 119`) to `e.synth_level` scaled by `g_partVol`.
    - Added logarithmic frequency scaling (`powf`) for Piano `Brightness` (`id 104`, `200..8000 Hz`) and PCM `Cutoff` (`id 137`, `40..8000 Hz`).
-4. **Help Manual Updated (`src/help_manual.h`)**:
+4. **USB-Host MIDI Support (`src/usb_midi_host.h`, `src/main.cpp`, `platformio.ini`)**:
+   - Switched `-DARDUINO_USB_MODE=0` and `-DARDUINO_USB_CDC_ON_BOOT=0` in `platformio.ini` so UART flashing/serial remains untouched while native USB OTG is freed for Host mode.
+   - Added hot-plug ESP-IDF USB Host MIDI driver (`src/usb_midi_host.h`) pinned to Core 0 feeding `processRawMidiByte()`.
+5. **Help Manual Updated (`src/help_manual.h`)**:
    - Documented interactive `ALGO` diagram touch gestures, `Mod Balance`, `OP Ratio` melodic steps, `Coarse & Fine` multiplication formula (`Ratio = Coarse x (1 + Fine%)`), `PCM` (`0-154` samples + Key Follow/Portamento), and updated `Piano` `TIMBRE`/`MIX` controls.
 
 ## 3. Next Steps — Hardware Verification Checklist
@@ -33,6 +36,9 @@
    - Configure 5 active parts (`Juno`, `DX7` with `Mod Balance` & `Ratio 1.41`, `PCM`, `Drums`, `Piano`) and verify `BASE_PARAMS = 157` (`TOTAL_PARAMS = 269`) round-trips cleanly across `.pat` export/import and `proj_01.bin` save/load.
    - *(Optional)*: Add `amyEnqueuePartConfig(...)` inside `openPatchImportModal()` in `src/synth_gui.h` so importing a `.pat` onto an `OFF` slot immediately initializes voices on Core 1.
 4. **Piano & PCM Audio Audition**:
+   - Test Piano `Low/Mid/High EQ`, `Body Level`, and logarithmic `Brightness` (`200..8000 Hz`) plus PCM `Cutoff` (`40..8000 Hz`) under live MIDI/sequencer playback.
+5. **USB-Host MIDI Hardware Test (when USB-C OTG + Power arrives)**:
+   - Connect USB-C OTG splitter with external power to the native **USB** port (keep **UART** port for flashing/debug) and verify hot-plug USB MIDI keyboard Note On/Off, CC Learn, and live sequencer step recording.
    - Test Piano `Low/Mid/High EQ`, `Body Level`, and logarithmic `Brightness` (`200..8000 Hz`) plus PCM `Cutoff` (`40..8000 Hz`) under live MIDI/sequencer playback.
 
 ## 4. Critical Developer Rules
