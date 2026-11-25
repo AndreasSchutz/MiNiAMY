@@ -94,17 +94,17 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     {TYPE_AMY, 14, "Algorithm",  1.0,   32.0,   1.0,    255, MODE_DX7,    PAGE_OSC},
     {TYPE_AMY, 15, "Feedback",   0.0,   7.0,    3.0,    255, MODE_DX7,    PAGE_OSC},
     {TYPE_AMY, 16, "OP1 Level",  0.0,   99.0,   90.0,   255, MODE_DX7,    PAGE_FILTER},
-    {TYPE_AMY, 17, "OP1 Ratio",  0.5,   16.0,   1.0,    255, MODE_DX7,    PAGE_FILTER},
+    {TYPE_AMY, 17, "OP1 Ratio",  0.5,   31.0,   1.0,    255, MODE_DX7,    PAGE_FILTER},
     {TYPE_AMY, 18, "OP2 Level",  0.0,   99.0,   75.0,   255, MODE_DX7,    PAGE_FILTER},
-    {TYPE_AMY, 19, "OP2 Ratio",  0.5,   16.0,   2.0,    255, MODE_DX7,    PAGE_FILTER},
+    {TYPE_AMY, 19, "OP2 Ratio",  0.5,   31.0,   2.0,    255, MODE_DX7,    PAGE_FILTER},
     {TYPE_AMY, 27, "OP3 Level",  0.0,   99.0,   65.0,   255, MODE_DX7,    PAGE_FILTER},
-    {TYPE_AMY, 28, "OP3 Ratio",  0.5,   16.0,   1.0,    255, MODE_DX7,    PAGE_FILTER},
+    {TYPE_AMY, 28, "OP3 Ratio",  0.5,   31.0,   1.0,    255, MODE_DX7,    PAGE_FILTER},
     {TYPE_AMY, 29, "OP4 Level",  0.0,   99.0,   85.0,   255, MODE_DX7,    PAGE_ENV},
-    {TYPE_AMY, 30, "OP4 Ratio",  0.5,   16.0,   1.0,    255, MODE_DX7,    PAGE_ENV},
+    {TYPE_AMY, 30, "OP4 Ratio",  0.5,   31.0,   1.0,    255, MODE_DX7,    PAGE_ENV},
     {TYPE_AMY, 31, "OP5 Level",  0.0,   99.0,   70.0,   255, MODE_DX7,    PAGE_ENV},
-    {TYPE_AMY, 32, "OP5 Ratio",  0.5,   16.0,   3.0,    255, MODE_DX7,    PAGE_ENV},
+    {TYPE_AMY, 32, "OP5 Ratio",  0.5,   31.0,   3.0,    255, MODE_DX7,    PAGE_ENV},
     {TYPE_AMY, 33, "OP6 Level",  0.0,   99.0,   60.0,   255, MODE_DX7,    PAGE_ENV},
-    {TYPE_AMY, 34, "OP6 Ratio",  0.5,   16.0,   4.0,    255, MODE_DX7,    PAGE_ENV},
+    {TYPE_AMY, 34, "OP6 Ratio",  0.5,   31.0,   4.0,    255, MODE_DX7,    PAGE_ENV},
     // --- DX7 GLOBAL (6 st) ---
     {TYPE_AMY, 49, "DX Octave", -2.0,   2.0,    0.0,    255, MODE_DX7,    PAGE_LFO},
     {TYPE_AMY, 50, "LFO Speed",  0.0,   99.0,   35.0,   255, MODE_DX7,    PAGE_LFO},
@@ -458,56 +458,33 @@ inline void syncDx7GuiFromRomPatch(uint8_t patchNum) {
             }
         }
     };
-    static const int lvlIds[] = {16, 18, 27, 29, 31, 33};
-    static const int ratIds[] = {17, 19, 28, 30, 32, 34};
-    int curOsc = -1;
-    const char *q = cmd;
+    static const int lvlIds[] = {16, 18, 27, 29, 31, 33}, ratIds[] = {17, 19, 28, 30, 32, 34};
+    int curOsc = -1; const char *q = cmd;
     while (*q) {
         if (*q == 'v') {
             curOsc = atoi(q + 1);
             while (*q && *q != 'Z') {
-                if (*q == 'o' && curOsc == 0) {
-                    int alg = atoi(q + 1); setD(14, (float)alg); updateDx7AlgoDiagram(alg);
-                } else if (*q == 'b' && curOsc == 0) {
-                    setD(15, strtof(q + 1, nullptr) * 7.0f);
-                } else if (*q == 'f' && curOsc == 0) {
-                    const char *c1 = strchr(q + 1, ','); const char *c2 = c1 ? strchr(c1 + 1, ',') : nullptr;
-                    const char *c3 = c2 ? strchr(c2 + 1, ',') : nullptr; const char *c4 = c3 ? strchr(c3 + 1, ',') : nullptr;
-                    if (c4) setD(52, (strtof(c4 + 1, nullptr) / 0.15f) * 99.0f);
+                if (*q == 'o' && curOsc == 0) { int alg = atoi(q + 1); setD(14, (float)alg); updateDx7AlgoDiagram(alg); }
+                else if (*q == 'b' && curOsc == 0) { setD(15, (strtof(q + 1, nullptr) / 0.32f) * 7.0f); }
+                else if (*q == 'f' && curOsc == 0) {
+                    const char *c1 = strchr(q + 1, ','), *c2 = c1 ? strchr(c1 + 1, ',') : nullptr, *c3 = c2 ? strchr(c2 + 1, ',') : nullptr, *c4 = c3 ? strchr(c3 + 1, ',') : nullptr;
+                    if (c4) setD(52, (strtof(c4 + 1, nullptr) / 0.08f) * 99.0f);
                 } else if (*q == 'f' && curOsc == 1) {
-                    setD(50, ((strtof(q + 1, nullptr) - 0.2f) / 18.0f) * 99.0f);
+                    float hz = constrain(strtof(q + 1, nullptr), 0.06f, 36.0f);
+                    setD(50, 99.0f * logf(hz / 0.06f) / logf(600.0f));
                 } else if (*q == 'A' && curOsc == 1) {
-                    setD(51, strtof(q + 1, nullptr) / 30.0f);
-                } else if (*q == 'w' && curOsc == 1) {
-                    setD(428, (float)atoi(q + 1));
-                } else if (curOsc >= 2 && curOsc <= 7) {
-                    int op = 7 - curOsc;
-                    int opBase = 300 + op * 20;
-                    if (*q == 'a') {
-                        char *nx = nullptr;
-                        float a0 = strtof(q + 1, &nx);
-                        float lvl99 = constrain((a0 / 2.0f) * 99.0f, 0.0f, 99.0f);
-                        setD(*(lvlIds + op), lvl99);
-                        setD(opBase + 0, lvl99);
-                        if (nx && *nx == ',') { strtof(nx + 1, &nx); }
-                        if (nx && *nx == ',') { float av = strtof(nx + 1, &nx); setD(opBase + 5, av * 7.0f); }
-                    } else if (*q == 'I') {
-                        float r = strtof(q + 1, nullptr);
-                        setD(*(ratIds + op), r);
-                        setD(opBase + 1, r < 0.75f ? 0.0f : floorf(r));
-                    } else if (*q == 'A') {
-                        char *nx = nullptr;
-                        strtof(q + 1, &nx);
-                        if (nx && *nx == ',') strtof(nx + 1, &nx);
+                    char *nx = nullptr; strtof(q + 1, &nx); if (nx && *nx == ',') strtof(nx + 1, &nx);
+                    if (nx && *nx == ',') { float ms = constrain(strtof(nx + 1, &nx), 0.0f, 3000.0f); setD(51, sqrtf(ms / 3000.0f) * 99.0f); }
+                } else if (*q == 'w' && curOsc == 1) { setD(428, (float)atoi(q + 1)); }
+                else if (curOsc >= 2 && curOsc <= 7) {
+                    int op = 7 - curOsc, opBase = 300 + op * 20;
+                    if (*q == 'a') { float lvl99 = constrain((strtof(q + 1, nullptr) / 2.0f) * 99.0f, 0.0f, 99.0f); setD(lvlIds[op], lvl99); setD(opBase + 0, lvl99); }
+                    else if (*q == 'I') { float r = strtof(q + 1, nullptr); setD(ratIds[op], r); setD(opBase + 1, r < 0.75f ? 0.0f : floorf(r)); setD(opBase + 2, (r >= 0.75f) ? ((r / floorf(r) - 1.0f) * 100.0f) : 0.0f); }
+                    else if (*q == 'A') {
+                        char *nx = nullptr; strtof(q + 1, &nx); if (nx && *nx == ',') strtof(nx + 1, &nx);
                         for (int st = 0; st < 4; st++) {
-                            if (nx && *nx == ',') {
-                                float tm = strtof(nx + 1, &nx);
-                                setD(opBase + 6 + st, 100.0f - (tm / 20.0f));
-                            }
-                            if (nx && *nx == ',') {
-                                float lv = strtof(nx + 1, &nx);
-                                setD(opBase + 10 + st, lv * 99.0f);
-                            }
+                            if (nx && *nx == ',') { float tm = constrain(strtof(nx + 1, &nx), 0.0f, 15000.0f); setD(opBase + 6 + st, 99.0f * (1.0f - powf(tm / 15000.0f, 1.0f / 2.2f))); }
+                            if (nx && *nx == ',') { setD(opBase + 10 + st, strtof(nx + 1, &nx) * 99.0f); }
                         }
                     }
                 }
@@ -916,8 +893,8 @@ inline void applyParameterValue(int idx, float newVal) {
     else v = 0;
     if ((float)v != p.currentVal) { p.currentVal = (float)v; refreshParamBox(idx); }
     synthParts[activePartIdx].patchOrNote = (uint8_t)v;
-    if (eng == ENG_JUNO) { syncJunoGuiFromRomPatch((uint8_t)v); syncAllPartParamsToAmy(activePartIdx); }
-    else if (eng == ENG_DX7) { syncDx7GuiFromRomPatch((uint8_t)v); syncAllPartParamsToAmy(activePartIdx); }
+    if (eng == ENG_JUNO) { syncJunoGuiFromRomPatch((uint8_t)v); }
+    else if (eng == ENG_DX7) { syncDx7GuiFromRomPatch((uint8_t)v); }
     memset(((char*)synthPatchNames) + activePartIdx * 16, 0, 16);
     int mSel = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
     if (mSel >= 0) refreshParamBox(mSel);
