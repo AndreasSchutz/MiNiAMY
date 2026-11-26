@@ -254,6 +254,7 @@ inline bool loadStateFromNvs(ParamT *matrix, int paramCount, PartT *parts, float
 template<typename ParamT, typename PartT>
 inline bool saveProjectToDisk(int slot1To16, ParamT *matrix, int paramCount, PartT *parts, float *partRam = nullptr, uint8_t *seqData = nullptr, size_t seqBytes = 0, uint8_t *songData = nullptr, size_t songBytes = 0) {
     if (!activeStorageFS) return false;
+    ensureStorageDirs();
     char *path = (char*)alloca(32);
     snprintf(path, 32, "/AMY/projects/proj_%02d.bin", constrain(slot1To16, 1, 16));
     size_t ramBytes = partRam ? (16 * paramCount * sizeof(float)) : 0;
@@ -285,7 +286,13 @@ inline bool saveProjectToDisk(int slot1To16, ParamT *matrix, int paramCount, Par
     if (activeStorageFS->exists(path)) activeStorageFS->remove(path);
     File f = activeStorageFS->open(path, FILE_WRITE);
     if (!f) { free(buf); return false; }
-    size_t written = f.write(buf, totalBytes);
+    size_t written = 0;
+    uint8_t chunk[512];
+    for (size_t off = 0; off < totalBytes; off += 512) {
+        size_t n = (totalBytes - off < 512) ? (totalBytes - off) : 512;
+        memcpy(chunk, buf + off, n);
+        written += f.write(chunk, n);
+    }
     f.close();
     free(buf);
     Serial.printf("[Storage] Sparade %s (%u B, %s)\n", path, (unsigned)written, usingPhysicalSD ? "SD CARD" : "INT FLASH");

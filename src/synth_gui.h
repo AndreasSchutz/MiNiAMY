@@ -480,7 +480,7 @@ inline void syncDx7GuiFromRomPatch(uint8_t patchNum) {
                 } else if (*q == 'w' && curOsc == 1) { setD(428, (float)atoi(q + 1)); }
                 else if (curOsc >= 2 && curOsc <= 7) {
                     int op = 7 - curOsc, opBase = 300 + op * 20;
-                    if (*q == 'a') { const char *c1 = strchr(q + 1, ','), *c2 = c1 ? strchr(c1 + 1, ',') : nullptr, *c3 = c2 ? strchr(c2 + 1, ',') : nullptr; float aEg = c3 ? strtof(c3 + 1, nullptr) : 0.0f; float lvl99 = constrain((aEg / 2.0f) * 99.0f, 0.0f, 99.0f); setD(lvlIds[op], lvl99); setD(opBase + 0, lvl99); }
+                    if (*q == 'a') { float lvl99 = constrain((strtof(q + 1, nullptr) / 2.0f) * 99.0f, 0.0f, 99.0f); setD(lvlIds[op], lvl99); setD(opBase + 0, lvl99); }
                     else if (*q == 'I') { float r = strtof(q + 1, nullptr); setD(ratIds[op], r); setD(opBase + 1, r < 0.75f ? 0.0f : floorf(r)); setD(opBase + 2, (r >= 0.75f) ? ((r / floorf(r) - 1.0f) * 100.0f) : 0.0f); }
                     else if (*q == 'A') {
                         char *nx = nullptr; strtof(q + 1, &nx); if (nx && *nx == ',') strtof(nx + 1, &nx);
@@ -665,6 +665,11 @@ inline bool isOpMenuTrigger(const Parameter &p) {
     return (id == 16 || id == 18 || id == 27 || id == 29 || id == 31 || id == 33 || id == 54);
 }
 
+inline bool isFxZeroToTenParam(const Parameter &p) {
+    if (p.pType != TYPE_AMY) return false;
+    int id = p.internalId;
+    return (id == 46 || id == 149 || id == 48 || id == 148 || id == 150 || id == 151);
+}
 inline bool isDx7RatioParam(const Parameter &p) { if (p.pType != TYPE_AMY || p.belongsToMode != MODE_DX7) return false; int id = p.internalId; return (id == 17 || id == 19 || id == 28 || id == 30 || id == 32 || id == 34); }
 inline void formatParamDisplay(const Parameter &p, char *outName, char *outVal) {
   static const char* engNames[] = {"OFF", "JUNO", "DX7", "PCM", "DRUMS", "PIANO"};
@@ -761,6 +766,7 @@ inline void formatParamDisplay(const Parameter &p, char *outName, char *outVal) 
     if (p.internalId >= 300 && p.internalId < 420 && ((p.internalId - 300) % 20) == 1) { int cv = constrain((int)roundf(p.currentVal), 0, 31); if (cv == 0) snprintf(outVal, 24, "0.5"); else snprintf(outVal, 24, "%d", cv); return; }
     if (isDx7RatioParam(p)) { snprintf(outVal, 24, "%.2f", p.currentVal); return; }
   }
+  if (isFxZeroToTenParam(p)) { snprintf(outVal, 24, "%.0f", roundf(mapValue(p.currentVal, p.minVal, p.maxVal, 0.0f, 10.0f))); return; }
   if (isIntegerParam(p)) snprintf(outVal, 24, "%.0f", p.currentVal);
   else snprintf(outVal, 24, "%.1f", p.currentVal);
 }
@@ -836,6 +842,7 @@ inline void applyParameterValue(int idx, float newVal) {
     Parameter &p = paramMatrix[idx];
     float clamped = constrain(newVal, p.minVal, p.maxVal);
     if (isIntegerParam(p)) clamped = roundf(clamped);
+    else if (isFxZeroToTenParam(p)) { float span = p.maxVal - p.minVal; clamped = p.minVal + roundf(((clamped - p.minVal) / span) * 10.0f) * (span * 0.1f); }
     if (p.pType == TYPE_AMY && !isSystemActionParam(p) && fabsf(clamped - p.currentVal) < 0.0001f) return;
     p.currentVal = clamped;
     if (p.pType == TYPE_AMY && p.internalId == 14) updateDx7AlgoDiagram((int)p.currentVal);
@@ -909,7 +916,8 @@ inline void applyParameterValue(int idx, float newVal) {
     }
     refreshSeqGridUI();
     amyEnqueuePartConfig((uint8_t)activePartIdx, sp.engine, sp.voices, sp.patchOrNote, sp.level);
-    loadPartIntoMatrix(activePartIdx);
+    if (eng != ENG_DX7 && eng != ENG_JUNO) loadPartIntoMatrix(activePartIdx);
+    else { int mV = findMatrixIdxBySysId(SYS_PARAM_PART_VOICES); if (mV >= 0) { paramMatrix[mV].currentVal = (float)sp.voices; refreshParamBox(mV); } int mP = findMatrixIdxBySysId(SYS_PARAM_PART_PATCH); if (mP >= 0) { paramMatrix[mP].currentVal = (float)sp.patchOrNote; refreshParamBox(mP); } updateEngineTabLocks(); if (g_synthEditFrame) lv_obj_clear_flag(g_synthEditFrame, LV_OBJ_FLAG_HIDDEN); }
     int mSel = findMatrixIdxBySysId(SYS_PARAM_PART_SEL);
     if (mSel >= 0) refreshParamBox(mSel);
   }
@@ -1087,6 +1095,7 @@ inline void resetCurrentSynthToDefaults() {
         }
         syncAllPartParamsToAmy(activePartIdx);
     } else if (eng == ENG_DX7) {
+        amyEnqueueParam(0, 13, 0.0f);
         auto setDxInit = [&](int pid, float val) {
             for (int i = 0; i < TOTAL_PARAMS; i++) {
                 Parameter *pp = paramMatrix + i;
@@ -1119,8 +1128,9 @@ inline void resetCurrentSynthToDefaults() {
             setDxInit(ob + 2, 0.0f);
             setDxInit(ob + 3, 0.0f);
             setDxInit(ob + 4, 0.0f);
-            setDxInit(ob + 5, 0.0f);
-            for (int r = 0; r < 4; r++) setDxInit(ob + 6 + r, 99.0f);
+            setDxInit(ob + 5, (op == 0) ? 7.0f : 0.0f);
+            static const float initR[4] = {95.0f, 60.0f, 50.0f, 65.0f};
+            for (int r = 0; r < 4; r++) setDxInit(ob + 6 + r, *(initR + r));
             for (int l = 0; l < 3; l++) setDxInit(ob + 10 + l, 99.0f);
             setDxInit(ob + 13, 0.0f);
             setDxInit(ob + 14, 0.0f);
@@ -1694,7 +1704,7 @@ inline void param_box_event_cb(lv_event_t *e) {
                 if (ms >= 0) applyParameterValue(ms, (float)(np + 1)); else loadPartIntoMatrix(np);
                 refreshParamBox(ti);
             } else {
-                if (isDx7RatioParam(paramMatrix[ti])) { float cur = paramMatrix[ti].currentVal; float nv = (td > 0.0f) ? ((cur < 0.99f) ? 1.0f : min(31.0f, floorf(cur) + 1.0f)) : ((cur <= 1.01f) ? 0.5f : ((cur > floorf(cur) + 0.005f) ? floorf(cur) : max(1.0f, floorf(cur) - 1.0f))); applyParameterValue(ti, nv); } else { float step = isIntegerParam(paramMatrix[ti]) ? 1.0f : ((paramMatrix[ti].maxVal - paramMatrix[ti].minVal) * 0.02f);
+                if (isDx7RatioParam(paramMatrix[ti])) { float cur = paramMatrix[ti].currentVal; float nv = (td > 0.0f) ? ((cur < 0.99f) ? 1.0f : min(31.0f, floorf(cur) + 1.0f)) : ((cur <= 1.01f) ? 0.5f : ((cur > floorf(cur) + 0.005f) ? floorf(cur) : max(1.0f, floorf(cur) - 1.0f))); applyParameterValue(ti, nv); } else { float step = isIntegerParam(paramMatrix[ti]) ? 1.0f : (isFxZeroToTenParam(paramMatrix[ti]) ? ((paramMatrix[ti].maxVal - paramMatrix[ti].minVal) * 0.1f) : ((paramMatrix[ti].maxVal - paramMatrix[ti].minVal) * 0.05f));
                 applyParameterValue(ti, paramMatrix[ti].currentVal + td * step); }
             }
         }, dblWin, nullptr);

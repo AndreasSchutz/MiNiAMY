@@ -269,8 +269,8 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
             else if (bal > 50.0f) lv99 = raw99 + (99.0f - raw99) * ((bal - 50.0f) / 50.0f);
         }
         amy_event e = amy_default_event(); e.synth = amySynth; e.osc = (uint16_t)(7 - op);
-        *(e.amp_coefs + COEF_CONST) = 0.0f;
-        *(e.amp_coefs + COEF_EG0) = (lv99 <= 0.5f) ? 0.0f : ((lv99 / 99.0f) * 2.0f);
+        *(e.amp_coefs + COEF_CONST) = (lv99 <= 0.5f) ? 0.0001f : ((lv99 / 99.0f) * 2.0f);
+        *(e.amp_coefs + COEF_EG0) = 1.0f;
         *(e.amp_coefs + COEF_MOD0) = (*(gAmd + slot) / 99.0f) * (*(*(opAms + slot) + op) / 3.0f) * 0.5f;
         amy_add_event(&e);
     };
@@ -302,7 +302,7 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
     if (paramId >= 49 && paramId <= 53) {
         amy_event e = amy_default_event(); e.synth = amySynth;
         if (paramId == 49) { e.osc = 0; *(e.freq_coefs + COEF_CONST) = 261.625565f * powf(2.0f, v); amy_add_event(&e); }
-        else if (paramId == 50) { e.osc = 1; *(e.freq_coefs + COEF_NOTE) = 0.0f; *(e.freq_coefs + COEF_CONST) = 0.06f * powf(600.0f, v / 99.0f); amy_add_event(&e); }
+        else if (paramId == 50) { e.osc = 1; *(e.freq_coefs + COEF_NOTE) = 0.0f; *(e.freq_coefs + COEF_CONST) = (v <= 0.5f) ? 0.0f : (0.06f * powf(600.0f, v / 99.0f)); *(e.amp_coefs + COEF_CONST) = (v <= 0.5f) ? 0.0f : 1.0f; amy_add_event(&e); }
         else if (paramId == 51) { e.osc = 1; *(e.amp_coefs + COEF_CONST) = 1.0f; *(e.amp_coefs + COEF_EG0) = 1.0f; *(e.eg0_times + 0) = 0; *(e.eg0_values + 0) = 0.0f; *(e.eg0_times + 1) = (int32_t)((v / 99.0f) * (v / 99.0f) * 3000.0f); *(e.eg0_values + 1) = 1.0f; amy_add_event(&e); }
         else if (paramId == 52) { e.osc = 0; *(e.freq_coefs + COEF_MOD0) = (v / 99.0f) * 0.08f; amy_add_event(&e); }
         else if (paramId == 53) { *(gAmd + slot) = v; for (uint16_t op = 0; op < 6; op++) { amy_event eo = amy_default_event(); eo.synth = amySynth; eo.osc = (uint16_t)(7 - op); *(eo.amp_coefs + COEF_MOD0) = (*(gAmd + slot) / 99.0f) * (opAms[slot][op] / 3.0f) * 0.5f; amy_add_event(&eo); } }
@@ -310,7 +310,7 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
         int pk = paramId - 420; amy_event e = amy_default_event(); e.synth = amySynth;
         if (pk == 8) { static const uint8_t dw[] = {TRIANGLE, SAW_DOWN, SAW_UP, PULSE, SINE, NOISE}; e.osc = 1; e.wave = dw[constrain((int)v, 0, 5)]; amy_add_event(&e); }
         else if (pk == 9) { e.osc = 1; e.trigger_phase = (v >= 0.5f) ? 0.25f : AMY_UNSET_FLOAT; amy_add_event(&e); }
-        else if (pk < 8) { e.osc = 0; *(e.freq_coefs + COEF_EG0) = 1.0f; *(e.eg0_times + 0) = 0; *(e.eg0_values + 0) = 0.0f; if (pk < 4) *(e.eg0_times + pk + 1) = (int32_t)(powf((99.0f - v) / 99.0f, 2.2f) * 15000.0f); else *(e.eg0_values + pk - 3) = (v - 50.0f) / 50.0f; amy_add_event(&e); }
+        else if (pk < 8) { e.osc = 0; *(e.freq_coefs + COEF_EG1) = 1.0f; *(e.eg1_times + 0) = 0; *(e.eg1_values + 0) = 0.0f; if (pk < 4) *(e.eg1_times + pk + 1) = (int32_t)(powf((99.0f - v) / 99.0f, 2.2f) * 15000.0f); else *(e.eg1_values + pk - 3) = (v - 50.0f) / 50.0f; amy_add_event(&e); }
     }
 }
 
@@ -378,6 +378,7 @@ inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
                                                 case 40: { float r = constrain(m.val1 / 10.0f, 0.0f, 1.0f); e.portamento_ms = (uint16_t)(r * r * 1000.0f); amy_add_event(&e); break; }
                         case 14: e.algorithm = (uint8_t)m.val1; amy_add_event(&e); break;
             case 15: e.feedback = (m.val1 / 7.0f) * 0.32f; amy_add_event(&e); break;
+            case 13: { amy_event ge = amy_default_event(); ge.bus = 0; ge.chorus_level = (m.val1 > 0.5f) ? 0.6f : 0.0f; amy_add_event(&ge); break; }
             case 46: { amy_event ge = amy_default_event(); ge.bus = 0; ge.echo_level = m.val1; amy_add_event(&ge); break; }
             case 47: { amy_event ge = amy_default_event(); ge.bus = 0; ge.echo_delay_ms = m.val1; amy_add_event(&ge); break; }
             case 48: { amy_event ge = amy_default_event(); ge.bus = 0; ge.echo_feedback = m.val1; amy_add_event(&ge); break; }

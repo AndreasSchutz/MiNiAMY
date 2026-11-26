@@ -139,7 +139,7 @@ void uiTask(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
-void setup() { Serial.begin(115200); delay(1500); startAmyBridge(); startUsbMidiHost(); xTaskCreatePinnedToCore(uiTask, "UI_Task", 16384, nullptr, 1, nullptr, 0); }
+void setup() { Serial.begin(115200); delay(1500); startAmyBridge(); startUsbMidiHost(); xTaskCreatePinnedToCore(uiTask, "UI_Task", 32768, nullptr, 1, nullptr, 0); }
 void loop() { vTaskDelete(nullptr); }
 void my_disp_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p) { gfx->draw16bitRGBBitmap(area->x1, area->y1, (uint16_t *)color_p, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1); lv_disp_flush_ready(disp); }
 void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data) {
