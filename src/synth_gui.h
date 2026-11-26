@@ -213,7 +213,7 @@ Parameter paramMatrix[TOTAL_PARAMS] = {
     {TYPE_AMY, 145, "Vel Sens",   0.0,   1.5,    1.0,    255, MODE_SAMPLER, PAGE_ENV},
 
     // --- SYSTEM ---
-    {TYPE_SYSTEM, SYS_PARAM_BRIGHTNESS, "Brightness", 10.0, 100.0, 85.0, 255, MODE_SYSTEM, PAGE_SYS_DISPLAY},
+    {TYPE_SYSTEM, SYS_PARAM_BRIGHTNESS, "Brightness", 10.0, 100.0, 100.0, 255, MODE_SYSTEM, PAGE_SYS_DISPLAY},
     {TYPE_SYSTEM, SYS_PARAM_MASTER_VOL, "Master Vol", 0.0,  10.0,  8.0,  255, MODE_SYSTEM, PAGE_FX},
     {TYPE_SYSTEM, SYS_PARAM_DBLCLICK,   "DblClick",   0.0,  2.0,   1.0,  255, MODE_SYSTEM, PAGE_SYS_DISPLAY},
     {TYPE_SYSTEM, SYS_PARAM_FLIP,       "Flip",       0.0,  1.0,   0.0,  255, MODE_SYSTEM, PAGE_SYS_DISPLAY},
@@ -480,7 +480,7 @@ inline void syncDx7GuiFromRomPatch(uint8_t patchNum) {
                 } else if (*q == 'w' && curOsc == 1) { setD(428, (float)atoi(q + 1)); }
                 else if (curOsc >= 2 && curOsc <= 7) {
                     int op = 7 - curOsc, opBase = 300 + op * 20;
-                    if (*q == 'a') { float lvl99 = constrain((strtof(q + 1, nullptr) / 2.0f) * 99.0f, 0.0f, 99.0f); setD(lvlIds[op], lvl99); setD(opBase + 0, lvl99); }
+                    if (*q == 'a') { const char *c1 = strchr(q + 1, ','), *c2 = c1 ? strchr(c1 + 1, ',') : nullptr, *c3 = c2 ? strchr(c2 + 1, ',') : nullptr; float aEg = c3 ? strtof(c3 + 1, nullptr) : 0.0f; float lvl99 = constrain((aEg / 2.0f) * 99.0f, 0.0f, 99.0f); setD(lvlIds[op], lvl99); setD(opBase + 0, lvl99); }
                     else if (*q == 'I') { float r = strtof(q + 1, nullptr); setD(ratIds[op], r); setD(opBase + 1, r < 0.75f ? 0.0f : floorf(r)); setD(opBase + 2, (r >= 0.75f) ? ((r / floorf(r) - 1.0f) * 100.0f) : 0.0f); }
                     else if (*q == 'A') {
                         char *nx = nullptr; strtof(q + 1, &nx); if (nx && *nx == ',') strtof(nx + 1, &nx);

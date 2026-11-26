@@ -269,8 +269,8 @@ inline void applyDx7ParamToAmy(uint8_t amySynth, int paramId, float v) {
             else if (bal > 50.0f) lv99 = raw99 + (99.0f - raw99) * ((bal - 50.0f) / 50.0f);
         }
         amy_event e = amy_default_event(); e.synth = amySynth; e.osc = (uint16_t)(7 - op);
-        *(e.amp_coefs + COEF_CONST) = (lv99 <= 0.5f) ? 0.0001f : ((lv99 / 99.0f) * 2.0f);
-        *(e.amp_coefs + COEF_EG0) = 1.0f;
+        *(e.amp_coefs + COEF_CONST) = 0.0f;
+        *(e.amp_coefs + COEF_EG0) = (lv99 <= 0.5f) ? 0.0f : ((lv99 / 99.0f) * 2.0f);
         *(e.amp_coefs + COEF_MOD0) = (*(gAmd + slot) / 99.0f) * (*(*(opAms + slot) + op) / 3.0f) * 0.5f;
         amy_add_event(&e);
     };
@@ -319,7 +319,6 @@ static uint8_t *g_activeNotes = nullptr;
 inline void processAmyBridgeMsg(const AmyBridgeMsg &m) {
     uint8_t amySynth = m.synthSlot + 1;
     if (m.type == AMY_MSG_PART_LEVEL) {
-        g_partEngine[m.synthSlot & 15] = m.engine;
         g_partVol[m.synthSlot & 15] = constrain(m.val1, 0.0f, 1.5f);
         amy_event e = amy_default_event(); e.synth = amySynth;
         e.synth_level = g_partVol[m.synthSlot & 15];

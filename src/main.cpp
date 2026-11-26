@@ -67,7 +67,7 @@ void uiTask(void *pvParameters) {
     { uint8_t ng[15]={0x00,0x15,0x19,0x04,0x11,0x07,0x31,0x39,0x45,0x06,0x0B,0x0A,0x29,0x2D,0x0F}; bus->writeBytes(ng,15); }
     bus->endWrite();
     gfx->fillScreen(0x0000);
-    ledcAttach(TFT_BL, 1000, 8);
+    ledcAttach(TFT_BL, AMY_SAMPLE_RATE * 2, 8);
     ledcWrite(TFT_BL, 220);
     int ctRes = bbct.init(TOUCH_SDA, TOUCH_SCL, TOUCH_RST, TOUCH_INT);
     g_touchReady = (ctRes == CT_SUCCESS);

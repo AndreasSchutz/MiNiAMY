@@ -1,7 +1,7 @@
 # HANDOFF.md — Project Continuation Context (ESP32-S3-8048S043C + AMY Synthesizer)
 
 ## 1. Current State & Working Features
-- **Hardware / Firmware**: Waveshare ESP32-S3-8048S043C (320x240 / 800x480 RGB, GT911/FT6336G touch, I2S ES8311/MAX98357A, SD card + NVS Flash).
+- **Hardware / Firmware**: LCDWIKI ES3C28P 2.8" IPS ESP32-S3 (240x320 ILI9341V SPI, FT6336G capacitive touch, onboard I2S ES8311 + speaker amp, microSD SDIO + 16MB Flash + 8MB OPI PSRAM). Spec PDF: https://lcdwiki.com
 - **Audio Engine**: Dual-core FreeRTOS architecture (`UI_Task` on Core 0, `AMY_Audio_Task` on Core 1 via lock-free queue `amy_bridge.h`, rate-limited to max 8 messages per audio block).
 - **Engines Implemented & Verified**:
   - `OFF` (`0`), `Juno-106` (`1`, patches `0..127`), `DX7` (`2`, patches `128..255`), `PCM` (`3`, 155 samples), `Drums` (`4`, 9-track TR-808), `Piano` (`5`, patch `256` `INTERP_PARTIALS`).
@@ -24,6 +24,10 @@
    - Added hot-plug ESP-IDF USB Host MIDI driver (`src/usb_midi_host.h`) pinned to Core 0 feeding `processRawMidiByte()`.
 5. **Help Manual Updated (`src/help_manual.h`)**:
    - Documented interactive `ALGO` diagram touch gestures, `Mod Balance`, `OP Ratio` melodic steps, `Coarse & Fine` multiplication formula (`Ratio = Coarse x (1 + Fine%)`), `PCM` (`0-154` samples + Key Follow/Portamento), and updated `Piano` `TIMBRE`/`MIX` controls.
+
+6. **Silent Backlight PWM & Hardware Pinout Documentation (`src/main.cpp`, `src/synth_gui.h`, `HANDOFF.md`)**:
+   - Phase-locked LCD backlight PWM (`TFT_BL = GPIO 45`) to `AMY_SAMPLE_RATE * 2` (`88.2 kHz`, 8-bit) and set default brightness to `100%` to eliminate 1 kHz / aliasing buzz in the onboard speaker amp.
+   - Verified `Expand Pin` 4P 1.25mm header provides free `GPIO 2`, `GPIO 3`, `GPIO 14`, `GPIO 21` (ready for external PCM5102 I2S DAC: `BCK=GPIO 2`, `LCK/WS=GPIO 3`, `DIN=GPIO 14`, `SCK=GND`, `3.3V/GND` from adjacent `I2C`/`UART` header).
 
 ## 3. Next Steps — Hardware Verification Checklist
 1. **DX7 `Ratio` / `Coarse` / `Fine` & Help Manual**:
