@@ -2,7 +2,7 @@
 
 ## Hardware & Build Target
 - **Board:** LCDWIKI ES3C28P (ESP32-S3R8, 16MB QIO Flash, 8MB Octal OPI PSRAM, 2.8" ILI9341 320x240 capacitive touch FT6336G, ES8311 audio codec on I2S/I2C).
-- **Build Environment:** PlatformIO (`env:esp32-s3-display`), `ARDUINO_USB_MODE=0` (USB Host MIDI active on GPIO 19/20).
+- **Build Environment:** PlatformIO (`env:esp32-s3-display`), `ARDUINO_USB_MODE=1` (USB CDC auto-upload & serial active; `startUsbMidiHost()` temporarily commented out until OTG power cable arrives).
 - **Audio Output:** 44.1 kHz stereo I2S to ES8311 + 88.2 kHz silent PWM backlight (`TFT_BL = GPIO 45`) to eliminate coil whine.
 
 ## Verified & Completed Features
@@ -21,7 +21,8 @@
    - Added `esp_reset_reason()` and NVS crash checkpoint (`Chk X`) readout to the `SYSTEM STATISTICS` modal (double-tap `OSC` meter).
 
 ## Open Issue & Exact Next Steps
-### 1. Fix `ESP_RST_PANIC` (Reset Reason 4) on `Project File` / `Patch File` Save
+### 1. [RESOLVED] Fix `ESP_RST_PANIC` (Reset Reason 4) on `Project File` / `Patch File` Save
+- **Root Cause & Fix:** LVGL (`src/lv_conf.h`) previously allocated ~197 KB from internal SRAM (`MALLOC_CAP_INTERNAL`), leaving only 924 B free after `create_synth_gui()` so `fopen()` failed creating its FreeRTOS mutex (`lock_init_generic`). Routed `LV_MEM_CUSTOM_ALLOC` / `LV_MEM_CUSTOM_REALLOC` to `heap_caps_malloc(..., MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)`, freeing ~202 KB internal SRAM and fixing both SD save/export and GPIO 42 RMT LED init.
 - **Symptom:** MicroSD mounts cleanly at boot (`Storage: SD CARD (FAT32)` on `FSPI`, pins `CS=47, MOSI=40, SCK=38, MISO=39`), and `Demo Presets` loads/plays without issues. However, double-tapping `Project File` (`saveProjectToDisk`) or `Patch File` (`saveSinglePatchToDisk`) triggers an immediate `ESP_RST_PANIC` (`Reset Reason: 4`).
 - **Next Actions:**
   1. Test `SPIFFS` redirection (or root path `/proj_01.bin`) in `src/storage_mgr.h` to isolate whether `SD.open("/AMY/projects/proj_01.bin", FILE_WRITE)` is panicking inside FatFs/SPI DMA on Core 0.

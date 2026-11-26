@@ -34,6 +34,8 @@ struct StoredPart {
     float level;
 };
 
+inline void setCrashChk(uint8_t c){Preferences p;if(p.begin("amy_chk",false)){p.putUChar("c",c);p.end();}}
+inline uint8_t getCrashChk(){uint8_t c=0;Preferences p;if(p.begin("amy_chk",true)){c=p.getUChar("c",0);p.end();}return c;}
 inline void markStorageDirty() {
     storageDirty = true;
     storageLastChangeMs = millis();
